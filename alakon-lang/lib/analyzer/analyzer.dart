@@ -4,10 +4,10 @@ import '../ast/ast.dart';
 import 'analysis_exceptions.dart';
 
 class _VariableDeclaration {
+  _VariableDeclaration({required this.type, required this.name});
+
   final String type;
   final String name;
-
-  _VariableDeclaration({required this.type, required this.name});
 }
 
 class Analyzer implements AstVisitor<void> {
@@ -22,7 +22,9 @@ class Analyzer implements AstVisitor<void> {
     final rightType = _latestExpressionType;
     if (leftType != rightType || leftType == null) {
       throw TypeMismatchException(
-        'Expected type $leftType but got $rightType',
+        message: 'Expected type $leftType but got $rightType',
+        line: node.right.start.line,
+        column: node.right.start.column,
       );
     }
     _latestExpressionType = leftType;
@@ -39,9 +41,18 @@ class Analyzer implements AstVisitor<void> {
     final leftType = _latestExpressionType;
     node.right.accept(this);
     final rightType = _latestExpressionType;
-    if (leftType != rightType || leftType != 'num') {
+    if (leftType != 'num') {
       throw TypeMismatchException(
-        'Expected num but got $leftType',
+        message: 'Expected num but got $leftType',
+        line: node.left.start.line,
+        column: node.left.start.column,
+      );
+    }
+    if (rightType != 'num') {
+      throw TypeMismatchException(
+        message: 'Expected num but got $rightType',
+        line: node.right.start.line,
+        column: node.right.start.column,
       );
     }
     _latestExpressionType = leftType;
@@ -55,13 +66,29 @@ class Analyzer implements AstVisitor<void> {
     final rightType = _latestExpressionType;
     switch ((leftType, rightType)) {
       case ('String', _):
-        throw TypeMismatchException('Expected num but got String');
+        throw TypeMismatchException(
+          message: 'Expected num but got String',
+          line: node.left.start.line,
+          column: node.left.start.column,
+        );
       case (_, 'String'):
-        throw TypeMismatchException('Expected num but got String');
+        throw TypeMismatchException(
+          message: 'Expected num but got String',
+          line: node.right.start.line,
+          column: node.right.start.column,
+        );
       case ('bool', _):
-        throw TypeMismatchException('Expected num but got bool');
+        throw TypeMismatchException(
+          message: 'Expected num but got bool',
+          line: node.left.start.line,
+          column: node.left.start.column,
+        );
       case (_, 'bool'):
-        throw TypeMismatchException('Expected num but got bool');
+        throw TypeMismatchException(
+          message: 'Expected num but got bool',
+          line: node.right.start.line,
+          column: node.right.start.column,
+        );
     }
     _latestExpressionType = leftType;
   }
@@ -71,7 +98,9 @@ class Analyzer implements AstVisitor<void> {
     node.expression.accept(this);
     if (_latestExpressionType != 'num') {
       throw TypeMismatchException(
-        'Expected num but got $_latestExpressionType',
+        message: 'Expected num but got $_latestExpressionType',
+        line: node.expression.start.line,
+        column: node.expression.start.column,
       );
     }
     _latestExpressionType = 'num';
@@ -90,16 +119,18 @@ class Analyzer implements AstVisitor<void> {
   @override
   void visitReferenceExpression(ReferenceExpressionNode node) {
     final variableName = node.value;
-    final variableType = _declaredVariables
-        .firstWhereOrNull((dec) => dec.name == variableName.value)
-        ?.type;
+    final resolvedReference = _declaredVariables
+        .firstWhereOrNull((dec) => dec.name == variableName.value);
 
-    if (variableType == null) {
+    if (resolvedReference == null) {
       throw UnknownReferenceException(
-        'Variable $variableName is referenced before it is declared',
+        message: 'Variable "${variableName.value}" is referenced before it is '
+            'declared',
+        column: variableName.column,
+        line: variableName.line,
       );
     }
-    _latestExpressionType = variableType;
+    _latestExpressionType = resolvedReference.type;
   }
 
   @override
@@ -115,13 +146,29 @@ class Analyzer implements AstVisitor<void> {
     final rightType = _latestExpressionType;
     switch ((leftType, rightType)) {
       case ('String', _):
-        throw TypeMismatchException('Expected num but got String');
+        throw TypeMismatchException(
+          message: 'Expected num but got String',
+          line: node.left.start.line,
+          column: node.left.start.column,
+        );
       case (_, 'String'):
-        throw TypeMismatchException('Expected num but got String');
+        throw TypeMismatchException(
+          message: 'Expected num but got String',
+          line: node.right.start.line,
+          column: node.right.start.column,
+        );
       case ('bool', _):
-        throw TypeMismatchException('Expected num but got bool');
+        throw TypeMismatchException(
+          message: 'Expected num but got bool',
+          line: node.left.start.line,
+          column: node.left.start.column,
+        );
       case (_, 'bool'):
-        throw TypeMismatchException('Expected num but got bool');
+        throw TypeMismatchException(
+          message: 'Expected num but got bool',
+          line: node.right.start.line,
+          column: node.right.start.column,
+        );
     }
     _latestExpressionType = leftType;
   }
@@ -140,14 +187,20 @@ class Analyzer implements AstVisitor<void> {
     );
     if (variableDec == null) {
       throw UnknownReferenceException(
-        'Variable ${node.variableName} is referenced before it is declared',
+        message: 'Variable ${node.variableName.value} is referenced before '
+            'it is declared',
+        line: node.variableName.start,
+        column: node.variableName.column,
       );
     }
     node.assign.accept(this);
     final assignType = _latestExpressionType;
     if (variableDec.type != assignType) {
       throw TypeMismatchException(
-          'Expected ${variableDec.type} but got $assignType');
+        message: 'Expected ${variableDec.type} but got $assignType',
+        line: node.assign.start.line,
+        column: node.assign.start.column,
+      );
     }
   }
 
@@ -156,23 +209,28 @@ class Analyzer implements AstVisitor<void> {
     final variableDec = _getVariableDecFromName(node.variableName.value);
     if (variableDec != null) {
       throw ReuseException(
-        'Name ${node.variableName} is already used',
+        message: 'Name ${node.variableName.value} is already used',
+        line: node.variableName.line,
+        column: node.variableName.column,
       );
     }
     if (node.assign case final assign?) {
       assign.accept(this);
       final assignType = _latestExpressionType;
       if (node.variableType.value != assignType) {
-        // TODO: errors with position
         throw TypeMismatchException(
-          'Expected ${node.variableType} but got $assignType',
+          message: 'Expected ${node.variableType.value} but got $assignType',
+          line: assign.start.line,
+          column: assign.start.column,
         );
       }
     }
 
     _declaredVariables.add(
       _VariableDeclaration(
-          type: node.variableType.value, name: node.variableName.value),
+        type: node.variableType.value,
+        name: node.variableName.value,
+      ),
     );
   }
 

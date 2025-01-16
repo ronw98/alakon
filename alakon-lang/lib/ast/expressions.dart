@@ -5,9 +5,15 @@ import 'ast.dart';
 abstract class ExpressionNode implements AstNode {}
 
 class ParenthesisedExpressionNode implements ExpressionNode {
+  ParenthesisedExpressionNode(this.expression);
+
   final ExpressionNode expression;
 
-  ParenthesisedExpressionNode(this.expression);
+  @override
+  CodePosition get start => expression.start;
+
+  @override
+  CodePosition get end => expression.end;
 
   @override
   R accept<R>(AstVisitor<R> visitor) =>
@@ -15,9 +21,15 @@ class ParenthesisedExpressionNode implements ExpressionNode {
 }
 
 class NegatedExpressionNode implements ExpressionNode {
+  NegatedExpressionNode(this.expression);
+
   final ExpressionNode expression;
 
-  NegatedExpressionNode(this.expression);
+  @override
+  CodePosition get start => expression.start;
+
+  @override
+  CodePosition get end => expression.end;
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitNegatedExpression(this);
@@ -27,6 +39,19 @@ abstract class LeafExpressionNode<T> implements ExpressionNode {
   LeafExpressionNode(this.value);
 
   final Token<T> value;
+
+  @override
+  CodePosition get start {
+    return CodePosition(line: value.line, column: value.column);
+  }
+
+  @override
+  CodePosition get end {
+    return CodePosition(
+      line: value.line,
+      column: value.column + value.length,
+    );
+  }
 }
 
 class StringExpressionNode extends LeafExpressionNode<String> {
@@ -58,10 +83,16 @@ class ReferenceExpressionNode extends LeafExpressionNode<String> {
 }
 
 abstract class OperationExpressionNode implements ExpressionNode {
+  OperationExpressionNode(this.left, this.right);
+
   final ExpressionNode left;
   final ExpressionNode right;
 
-  OperationExpressionNode(this.left, this.right);
+  @override
+  CodePosition get start => left.start;
+
+  @override
+  CodePosition get end => left.end;
 }
 
 class MultiplicationExpressionNode extends OperationExpressionNode {

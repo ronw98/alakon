@@ -69,6 +69,23 @@ class AlakonGrammar extends GrammarDefinition {
   Parser variableAssign() =>
       ref0(identifier) & ref0(tokenEquals) & ref0(expression);
 
+  /// Expressions
+  ///
+  /// ### Primitives (in descending order of priority):
+  /// * literal string
+  /// * literal number
+  /// * literal boolean
+  /// * variable identifier
+  ///
+  /// ### Operators (in descending order of priority):
+  /// * parenthesis `(expr)`
+  /// * negation `- expr`
+  /// * multiplication (same priority)
+  ///   * multiply `expr * expr`
+  ///   * divide `expr / expr`
+  /// * addition (same priority)
+  ///   * add `expr + expr`
+  ///   * subtract `expr - expr`
   Parser expression() {
     final builder = ExpressionBuilder()
       ..primitive(
@@ -107,7 +124,11 @@ class AlakonGrammar extends GrammarDefinition {
         ),
       )
       ..primitive(
-        ref0(identifier),
+        ref0(identifier).map(
+          (value) {
+            return ReferenceExpressionNode(value);
+          },
+        ),
       );
 
     builder.group().wrapper(

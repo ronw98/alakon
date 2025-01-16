@@ -9,8 +9,8 @@ import 'package:alakon_lang/parser.dart';
 main() async {
   final parser = AlakonParser().build();
   final result = parser.parse('''
-  num variable = (3 + 5) - 757/2
-  String b = 2
+String b = "oui" + "ok"
+num variable = (3 + 5) - 757/2
 ''');
   final programNode = result.value as AstNode;
   print(programNode.accept(AstPrinter()));
