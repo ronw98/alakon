@@ -1,4 +1,5 @@
-import 'package:alakon_lang/ast/ast.dart';
+
+import 'ast.dart';
 
 class AstPrinter implements AstVisitor<String> {
   int _indent = 0;

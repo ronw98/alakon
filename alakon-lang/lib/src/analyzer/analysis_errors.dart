@@ -1,4 +1,5 @@
-import 'package:alakon_lang/analyzer/analysis_result.dart';
+
+import 'analysis_result.dart';
 
 /// Exception signifying the analysis of the program has encountered
 /// [AnalysisErrors].

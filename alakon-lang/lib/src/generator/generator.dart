@@ -1,4 +1,4 @@
-import 'package:alakon_lang/ast/ast.dart';
+import '../ast/ast.dart';
 
 class Generator implements AstVisitor<String> {
   @override

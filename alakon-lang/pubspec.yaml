@@ -1,7 +1,9 @@
 name: alakon_lang
 description: A sample command-line application with basic argument parsing.
 version: 0.0.1
-# repository: https://github.com/my_org/my_repo
+publish_to: none
+
+resolution: workspace
 
 environment:
   sdk: ^3.5.3
@@ -10,9 +12,8 @@ environment:
 dependencies:
   analyzer: ^7.1.0
   args: ^2.4.2
-  collection: ^1.19.1
+  collection: ^1.19.0
   petitparser: ^6.0.2
 
 dev_dependencies:
-  lints: ^4.0.0
-  test: ^1.24.0
+  lints: ^5.1.1

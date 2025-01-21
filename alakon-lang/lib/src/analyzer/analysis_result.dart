@@ -1,4 +1,5 @@
-import 'package:alakon_lang/analyzer/analysis_errors.dart';
+
+import 'analysis_errors.dart';
 
 /// Contains the result of analyzing a chunk of code.
 ///

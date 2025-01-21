@@ -1,8 +1,8 @@
-import 'package:alakon_lang/analyzer/analysis_result.dart';
 import 'package:collection/collection.dart';
 
 import '../ast/ast.dart';
 import 'analysis_errors.dart';
+import 'analysis_result.dart';
 
 /// Analyzer of the alakon language.
 class AlakonAnalyzer {

@@ -1,10 +1,10 @@
 import 'dart:isolate';
 
-import 'package:alakon_lang/analyzer/analyzer.dart';
-import 'package:alakon_lang/ast/ast.dart';
-import 'package:alakon_lang/ast/ast_printer.dart';
-import 'package:alakon_lang/generator/generator.dart';
-import 'package:alakon_lang/parser.dart';
+import 'package:alakon_lang/src/analyzer/analyzer.dart';
+import 'package:alakon_lang/src/ast/ast.dart';
+import 'package:alakon_lang/src/ast/ast_printer.dart';
+import 'package:alakon_lang/src/generator/generator.dart';
+import 'package:alakon_lang/src/parser.dart';
 
 main() async {
   final parser = AlakonParser().build();
