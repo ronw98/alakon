@@ -10,7 +10,7 @@ main() async {
   final parser = AlakonParser().build();
   final result = parser.parse('''
 String b = "oui" + 2
-num variable = (3 + 5) - 757/"2"
+num variable = 
 ''');
   final programNode = result.value as AstNode;
   print(programNode.accept(AstPrinter()));

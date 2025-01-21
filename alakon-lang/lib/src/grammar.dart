@@ -7,7 +7,7 @@ class AlakonGrammar extends GrammarDefinition {
   @override
   Parser start() => ref0(program);
 
-  Parser program() => ref0(statement).plus();
+  Parser program() => ref0(statement).plusGreedy(endOfInput());
 
   Parser token(Object input) {
     if (input is Parser) {
