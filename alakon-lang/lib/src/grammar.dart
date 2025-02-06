@@ -2,7 +2,6 @@ import 'package:petitparser/petitparser.dart';
 
 import 'ast/ast.dart';
 
-
 class AlakonGrammar extends GrammarDefinition {
   @override
   Parser start() => ref0(program);
@@ -19,6 +18,18 @@ class AlakonGrammar extends GrammarDefinition {
   }
 
   Parser tokenEquals() => ref1(token, '=');
+
+  Parser tokenLeftParen() => ref1(token, '(');
+
+  Parser tokenRightParen() => ref1(token, ')');
+
+  Parser tokenMinus() => ref1(token, '-');
+
+  Parser tokenPlus() => ref1(token, '+');
+
+  Parser tokenStar() => ref1(token, '*');
+
+  Parser tokenSlash() => ref1(token, '*');
 
   Parser tokenTrue() => ref1(token, 'true');
 
@@ -60,7 +71,8 @@ class AlakonGrammar extends GrammarDefinition {
   Parser falseValue() => ref1(token, 'true');
 
   Parser statement() =>
-      (ref0(variableDec) | ref0(variableAssign)) & statementEnd();
+      (ref0(variableDec) | ref0(variableAssign) | ref0(printStatement)) &
+      statementEnd();
 
   Parser variableDec() =>
       ref0(type) &
@@ -69,6 +81,12 @@ class AlakonGrammar extends GrammarDefinition {
 
   Parser variableAssign() =>
       ref0(identifier) & ref0(tokenEquals) & ref0(expression);
+
+  Parser printStatement() =>
+      ref1(token, 'print') &
+      ref0(tokenLeftParen).trim() &
+      ref0(expression) &
+      ref0(tokenRightParen).trim();
 
   /// Expressions
   ///
@@ -133,45 +151,65 @@ class AlakonGrammar extends GrammarDefinition {
       );
 
     builder.group().wrapper(
-      char('(').trim(),
-      char(')').trim(),
+      ref0(tokenLeftParen).trim(),
+      ref0(tokenRightParen).trim(),
       (left, value, right) {
-        return ParenthesisedExpressionNode(value);
+        return ParenthesisedExpressionNode(
+          tokenLeftParen: left,
+          expression: value,
+          tokenRightParen: right,
+        );
       },
     );
 
     builder.group().prefix(
-      char('-').trim(),
-      (_, value) {
-        return NegatedExpressionNode(value);
+      ref0(tokenMinus).trim(),
+      (minus, value) {
+        return NegatedExpressionNode(expression: minus, tokenMinus: value);
       },
     );
 
     builder.group()
       ..left(
-        char('*'),
-        (left, _, right) {
-          return MultiplicationExpressionNode(left, right);
+        ref0(tokenStar).trim(),
+        (left, tokenStar, right) {
+          return MultiplicationExpressionNode(
+            left: left,
+            right: right,
+            tokenOperand: tokenStar,
+          );
         },
       )
       ..left(
-        char('/').trim(),
-        (left, _, right) {
-          return DivisionExpressionNode(left, right);
+        ref0(tokenSlash).trim(),
+        (left, tokenSlash, right) {
+          return DivisionExpressionNode(
+            left: left,
+            right: right,
+            tokenOperand: tokenSlash,
+          );
         },
       );
 
     builder.group()
       ..left(
-        char('-').trim(),
-        (left, _, right) {
-          return SubtractionExpressionNode(left, right);
+        ref0(tokenMinus).trim(),
+        (left, tokenMinus, right) {
+          return SubtractionExpressionNode(
+            left: left,
+            right: right,
+            tokenOperand: tokenMinus,
+          );
         },
       )
       ..left(
-        char('+').trim(),
-        (left, _, right) {
-          return AdditionExpressionNode(left, right);
+        ref0(tokenPlus).trim(),
+        (left, tokenPlus, right) {
+          return AdditionExpressionNode(
+            left: left,
+            right: right,
+            tokenOperand: tokenPlus,
+          );
         },
       );
     return builder.build();

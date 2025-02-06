@@ -52,8 +52,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       result.recordError(
         TypeMismatchError(
           message: 'Expected type $leftType but got $rightType',
-          line: node.right.start.line,
-          column: node.right.start.column,
+          begin: node.right.beginToken,
+          end: node.right.endToken,
         ),
       );
     }
@@ -81,8 +81,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       result.recordError(
         TypeMismatchError(
           message: 'Expected num but got $leftType',
-          line: node.left.start.line,
-          column: node.left.start.column,
+          begin: node.left.beginToken,
+          end: node.left.endToken,
         ),
       );
     }
@@ -90,8 +90,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       result.recordError(
         TypeMismatchError(
           message: 'Expected num but got $rightType',
-          line: node.right.start.line,
-          column: node.right.start.column,
+          begin: node.right.beginToken,
+          end: node.right.endToken,
         ),
       );
     }
@@ -115,32 +115,32 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got String',
-            line: node.left.start.line,
-            column: node.left.start.column,
+            begin: node.left.beginToken,
+            end: node.left.endToken,
           ),
         );
       case (_, 'String'):
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got String',
-            line: node.right.start.line,
-            column: node.right.start.column,
+            begin: node.right.beginToken,
+            end: node.right.endToken,
           ),
         );
       case ('bool', _):
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got bool',
-            line: node.left.start.line,
-            column: node.left.start.column,
+            begin: node.left.beginToken,
+            end: node.left.endToken,
           ),
         );
       case (_, 'bool'):
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got bool',
-            line: node.right.start.line,
-            column: node.right.start.column,
+            begin: node.right.beginToken,
+            end: node.right.endToken,
           ),
         );
     }
@@ -155,8 +155,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       analysisResult.recordError(
         TypeMismatchError(
           message: 'Expected num but got $_latestExpressionType',
-          line: node.expression.start.line,
-          column: node.expression.start.column,
+          begin: node.expression.beginToken,
+          end: node.expression.beginToken,
         ),
       );
     }
@@ -190,8 +190,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
           message:
               'Variable "${variableName.value}" is referenced before it is '
               'declared',
-          column: variableName.column,
-          line: variableName.line,
+          begin: variableName,
+          end: variableName,
         ),
       );
     }
@@ -224,32 +224,32 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got String',
-            line: node.left.start.line,
-            column: node.left.start.column,
+            begin: node.left.beginToken,
+            end: node.left.endToken,
           ),
         );
       case (_, 'String'):
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got String',
-            line: node.right.start.line,
-            column: node.right.start.column,
+            begin: node.right.beginToken,
+            end: node.right.endToken,
           ),
         );
       case ('bool', _):
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got bool',
-            line: node.left.start.line,
-            column: node.left.start.column,
+            begin: node.left.beginToken,
+            end: node.left.endToken,
           ),
         );
       case (_, 'bool'):
         result.recordError(
           TypeMismatchError(
             message: 'Expected num but got bool',
-            line: node.right.start.line,
-            column: node.right.start.column,
+            begin: node.right.beginToken,
+            end: node.right.endToken,
           ),
         );
     }
@@ -277,8 +277,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
         UnknownReferenceError(
           message: 'Variable ${node.variableName.value} is referenced before '
               'it is declared',
-          line: node.variableName.start,
-          column: node.variableName.column,
+          begin: node.variableName,
+          end: node.variableName,
         ),
       );
     }
@@ -289,8 +289,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       result.recordError(
         TypeMismatchError(
           message: 'Expected $type but got $assignType',
-          line: node.assign.start.line,
-          column: node.assign.start.column,
+          begin: node.assign.beginToken,
+          end: node.assign.endToken,
         ),
       );
     }
@@ -305,8 +305,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       result.recordError(
         ReuseError(
           message: 'Name ${node.variableName.value} is already used',
-          line: node.variableName.line,
-          column: node.variableName.column,
+          begin: node.variableName,
+          end: node.variableName,
         ),
       );
     }
@@ -318,8 +318,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
         result.recordError(
           TypeMismatchError(
             message: 'Expected ${node.variableType.value} but got $assignType',
-            line: assign.start.line,
-            column: assign.start.column,
+            begin: assign.beginToken,
+            end: assign.endToken,
           ),
         );
       }
@@ -338,6 +338,11 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
     return _declaredVariables.firstWhereOrNull(
       (dec) => dec.name == variableName,
     );
+  }
+
+  @override
+  AnalysisResult visitPrint(PrintNode node) {
+    return node.expression.accept(this);
   }
 }
 

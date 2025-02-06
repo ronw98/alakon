@@ -5,15 +5,21 @@ import 'ast.dart';
 abstract class ExpressionNode implements AstNode {}
 
 class ParenthesisedExpressionNode implements ExpressionNode {
-  ParenthesisedExpressionNode(this.expression);
+  ParenthesisedExpressionNode({
+    required this.expression,
+    required this.tokenLeftParen,
+    required this.tokenRightParen,
+  });
 
+  final Token<String> tokenLeftParen;
+  final Token<String> tokenRightParen;
   final ExpressionNode expression;
 
   @override
-  CodePosition get start => expression.start;
+  Token get beginToken => tokenLeftParen;
 
   @override
-  CodePosition get end => expression.end;
+  Token get endToken => tokenRightParen;
 
   @override
   R accept<R>(AstVisitor<R> visitor) =>
@@ -21,15 +27,19 @@ class ParenthesisedExpressionNode implements ExpressionNode {
 }
 
 class NegatedExpressionNode implements ExpressionNode {
-  NegatedExpressionNode(this.expression);
+  NegatedExpressionNode({
+    required this.expression,
+    required this.tokenMinus,
+  });
 
+  final Token<String> tokenMinus;
   final ExpressionNode expression;
 
   @override
-  CodePosition get start => expression.start;
+  Token get beginToken => tokenMinus;
 
   @override
-  CodePosition get end => expression.end;
+  Token get endToken => expression.endToken;
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitNegatedExpression(this);
@@ -41,17 +51,10 @@ abstract class LeafExpressionNode<T> implements ExpressionNode {
   final Token<T> value;
 
   @override
-  CodePosition get start {
-    return CodePosition(line: value.line, column: value.column);
-  }
+  Token get beginToken => value;
 
   @override
-  CodePosition get end {
-    return CodePosition(
-      line: value.line,
-      column: value.column + value.length,
-    );
-  }
+  Token get endToken => value;
 }
 
 class StringExpressionNode extends LeafExpressionNode<String> {
@@ -83,20 +86,29 @@ class ReferenceExpressionNode extends LeafExpressionNode<String> {
 }
 
 abstract class OperationExpressionNode implements ExpressionNode {
-  OperationExpressionNode(this.left, this.right);
+  OperationExpressionNode({
+    required this.left,
+    required this.right,
+    required this.tokenOperand,
+  });
 
   final ExpressionNode left;
   final ExpressionNode right;
+  final Token<String> tokenOperand;
 
   @override
-  CodePosition get start => left.start;
+  Token get beginToken => left.beginToken;
 
   @override
-  CodePosition get end => left.end;
+  Token get endToken => right.endToken;
 }
 
 class MultiplicationExpressionNode extends OperationExpressionNode {
-  MultiplicationExpressionNode(super.left, super.right);
+  MultiplicationExpressionNode({
+    required super.left,
+    required super.right,
+    required super.tokenOperand,
+  });
 
   @override
   R accept<R>(AstVisitor<R> visitor) =>
@@ -104,21 +116,33 @@ class MultiplicationExpressionNode extends OperationExpressionNode {
 }
 
 class DivisionExpressionNode extends OperationExpressionNode {
-  DivisionExpressionNode(super.left, super.right);
+  DivisionExpressionNode({
+    required super.left,
+    required super.right,
+    required super.tokenOperand,
+  });
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitDivisionExpression(this);
 }
 
 class AdditionExpressionNode extends OperationExpressionNode {
-  AdditionExpressionNode(super.left, super.right);
+  AdditionExpressionNode({
+    required super.left,
+    required super.right,
+    required super.tokenOperand,
+  });
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitAdditionExpression(this);
 }
 
 class SubtractionExpressionNode extends OperationExpressionNode {
-  SubtractionExpressionNode(super.left, super.right);
+  SubtractionExpressionNode({
+    required super.left,
+    required super.right,
+    required super.tokenOperand,
+  });
 
   @override
   R accept<R>(AstVisitor<R> visitor) =>

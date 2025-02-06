@@ -1,4 +1,3 @@
-
 import 'ast.dart';
 
 class AstPrinter implements AstVisitor<String> {
@@ -89,6 +88,14 @@ class AstPrinter implements AstVisitor<String> {
         node.variableName,
         if (node.assign != null) node.assign,
       ],
+    );
+  }
+
+  @override
+  String visitPrint(PrintNode node) {
+    return _printNodeWithChildren(
+      'Print',
+      [node.expression],
     );
   }
 

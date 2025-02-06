@@ -1,5 +1,4 @@
-
-import 'analysis_result.dart';
+import 'package:alakon_lang/alakon_lang.dart';
 
 /// Exception signifying the analysis of the program has encountered
 /// [AnalysisErrors].
@@ -24,31 +23,31 @@ class AnalysisException implements Exception {
 /// **Note**: This is not a dart [Error], rather a data class containing
 /// data about a semantic error in an alakon program.
 class AnalysisError {
-
   AnalysisError({
     required this.message,
-    required this.line,
-    required this.column,
+    required this.begin,
+    required this.end,
   });
+
   /// Exception message to display
   final String message;
 
   /// Number of the line causing the exception.
-  final int line;
+  final Token begin;
 
   /// Position of the exception in the line.
-  final int column;
+  final Token end;
 
   @override
   String toString() {
-    return '$runtimeType: $message\n\tPos: $line:$column';
+    return '$runtimeType: $message\n\tPos: ${begin.line}:${end.column}';
   }
 }
 
 class TypeMismatchError extends AnalysisError {
   TypeMismatchError({
-    required super.line,
-    required super.column,
+    required super.begin,
+    required super.end,
     required super.message,
   });
 }
@@ -56,15 +55,15 @@ class TypeMismatchError extends AnalysisError {
 class UnknownReferenceError extends AnalysisError {
   UnknownReferenceError({
     required super.message,
-    required super.line,
-    required super.column,
+    required super.begin,
+    required super.end,
   });
 }
 
 class ReuseError extends AnalysisError {
   ReuseError({
     required super.message,
-    required super.line,
-    required super.column,
+    required super.begin,
+    required super.end,
   });
 }

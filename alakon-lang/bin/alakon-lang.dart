@@ -9,16 +9,13 @@ import 'package:alakon_lang/src/parser.dart';
 main() async {
   final parser = AlakonParser().build();
   final result = parser.parse('''
-String b = "oui" + 2
-num variable = 
+String b = "oui" + (14 * 2)
 ''');
   final programNode = result.value as AstNode;
   print(programNode.accept(AstPrinter()));
 
   final analyzer = AlakonAnalyzer();
   analyzer.analyze(programNode);
-
-
 
   final generatedDart = programNode.accept(Generator());
 

@@ -1,3 +1,4 @@
+import 'package:petitparser/core.dart';
 import 'package:petitparser/parser.dart';
 
 import 'ast/ast.dart';
@@ -11,11 +12,12 @@ class AlakonParser extends AlakonGrammar {
             [
               final type,
               final name,
-              [_, final assign],
+              [final tokenEq, final assign],
             ] =>
               VariableDeclarationNode(
                 variableType: type,
                 variableName: name,
+                tokenEquals: tokenEq,
                 assign: assign,
               ),
             [final type, final name, ...] => VariableDeclarationNode(
@@ -31,9 +33,31 @@ class AlakonParser extends AlakonGrammar {
   Parser variableAssign() => super.variableAssign().map(
         (value) {
           return switch (value) {
-            [final variable, _, final assign] => VariableAssignNode(
+            [final variable, final tokenEq, final assign] => VariableAssignNode(
                 variableName: variable,
                 assign: assign,
+                tokenEquals: tokenEq,
+              ),
+            _ => throw Error(),
+          };
+        },
+      );
+
+  @override
+  Parser printStatement() => super.printStatement().map(
+        (value) {
+          return switch (value) {
+            [
+              final Token<String> print,
+              final leftParen,
+              final exp,
+              final rightParen
+            ] =>
+              PrintNode(
+                printToken: print,
+                expression: exp,
+                tokenLeftParen: leftParen,
+                tokenRightParen: rightParen,
               ),
             _ => throw Error(),
           };

@@ -40,12 +40,14 @@ abstract interface class AstVisitor<R> {
   R visitVariableDeclaration(VariableDeclarationNode node);
 
   R visitVariableAssign(VariableAssignNode node);
+
+  R visitPrint(PrintNode node);
 }
 
-abstract interface class AstNode {
-  CodePosition get start;
+abstract class AstNode {
+  Token get beginToken;
 
-  CodePosition get end;
+  Token get endToken;
 
   R accept<R>(AstVisitor<R> visitor);
 }
@@ -56,10 +58,10 @@ class ProgramNode implements AstNode {
   final List<StatementNode> statements;
 
   @override
-  CodePosition get start => statements.first.start;
+  Token get beginToken => statements.first.beginToken;
 
   @override
-  CodePosition get end => statements.last.end;
+  Token get endToken => statements.first.endToken;
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitProgram(this);
@@ -67,56 +69,69 @@ class ProgramNode implements AstNode {
 
 abstract class StatementNode implements AstNode {}
 
+class PrintNode extends StatementNode {
+  PrintNode({
+    required this.printToken,
+    required this.expression,
+    required this.tokenRightParen,
+    required this.tokenLeftParen,
+  });
+
+  final Token<String> printToken;
+  final Token<String> tokenLeftParen;
+  final Token<String> tokenRightParen;
+  final ExpressionNode expression;
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitPrint(this);
+
+  @override
+  Token get beginToken => printToken;
+
+  @override
+  Token get endToken => tokenRightParen;
+}
+
 class VariableDeclarationNode extends StatementNode {
   VariableDeclarationNode({
     required this.variableType,
     required this.variableName,
+    this.tokenEquals,
     this.assign,
   });
 
   final Token<String> variableType;
   final Token<String> variableName;
+
+  final Token<String>? tokenEquals;
   final ExpressionNode? assign;
 
   @override
-  CodePosition get start {
-    return CodePosition(
-      line: variableType.line,
-      column: variableType.column,
-    );
-  }
+  Token get beginToken => variableType;
 
   @override
-  CodePosition get end {
-    if (assign case final assign?) return assign.end;
-    return CodePosition(
-      line: variableName.line,
-      column: variableName.column,
-    );
-  }
+  Token get endToken => assign?.endToken ?? variableName;
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitVariableDeclaration(this);
 }
 
 class VariableAssignNode extends StatementNode {
-  VariableAssignNode({required this.variableName, required this.assign});
+  VariableAssignNode({
+    required this.variableName,
+    required this.assign,
+    required this.tokenEquals,
+  });
 
   final Token<String> variableName;
+  final Token<String> tokenEquals;
   final ExpressionNode assign;
 
   @override
-  CodePosition get start {
-    return CodePosition(
-      line: variableName.line,
-      column: variableName.column,
-    );
-  }
+  Token get beginToken => variableName;
 
   @override
-  CodePosition get end {
-    return assign.end;
-  }
+  Token get endToken => assign.endToken;
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitVariableAssign(this);

@@ -101,4 +101,10 @@ class Generator implements AstVisitor<String> {
     result.write(';');
     return result.toString();
   }
+
+  @override
+  String visitPrint(PrintNode node) {
+    final expr = node.expression.accept(this);
+    return 'print($expr);';
+  }
 }
