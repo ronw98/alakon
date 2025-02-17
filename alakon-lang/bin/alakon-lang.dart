@@ -1,26 +1,19 @@
-import 'dart:isolate';
-
-import 'package:alakon_lang/src/analyzer/analyzer.dart';
-import 'package:alakon_lang/src/ast/ast.dart';
+import 'package:alakon_lang/alakon_lang.dart';
 import 'package:alakon_lang/src/ast/ast_printer.dart';
-import 'package:alakon_lang/src/generator/generator.dart';
-import 'package:alakon_lang/src/parser.dart';
 
+/// This is a test/example file, do not consider this
 main() async {
   final parser = AlakonParser().build();
   final result = parser.parse('''
-String b = "oui" + (14 * 2)
+print(-2)
 ''');
   final programNode = result.value as AstNode;
-  print(programNode.accept(AstPrinter()));
-
+  programNode.accept(AstPrinter());
   final analyzer = AlakonAnalyzer();
-  analyzer.analyze(programNode);
-
-  final generatedDart = programNode.accept(Generator());
-
-  final uri = Uri.dataFromString(generatedDart, mimeType: 'application/dart');
-
-  // https://stackoverflow.com/questions/13585082/how-do-i-execute-dynamically-like-eval-in-dart
-  await Isolate.spawnUri(uri, [], null);
+  final analysisResult = analyzer.analyze(programNode);
+  if (analysisResult.hasError) {
+    throw AnalysisException(analysisResult);
+  }
+  final elementTree = ElementTreeBuilder().build(programNode as ProgramNode);
+  elementTree.run();
 }

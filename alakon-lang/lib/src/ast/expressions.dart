@@ -58,7 +58,20 @@ abstract class LeafExpressionNode<T> implements ExpressionNode {
 }
 
 class StringExpressionNode extends LeafExpressionNode<String> {
-  StringExpressionNode(super.value);
+  StringExpressionNode({
+    required Token<String> value,
+    required this.leftQuotes,
+    required this.rightQuotes,
+  }) : super(value);
+
+  final Token<String> leftQuotes;
+  final Token<String> rightQuotes;
+
+  @override
+  Token get beginToken => leftQuotes;
+
+  @override
+  Token get endToken => rightQuotes;
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitStringExpression(this);

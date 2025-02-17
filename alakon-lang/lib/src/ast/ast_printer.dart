@@ -1,5 +1,6 @@
 import 'ast.dart';
 
+/// An [AstVisitor] that prints the ast.
 class AstPrinter implements AstVisitor<String> {
   int _indent = 0;
 

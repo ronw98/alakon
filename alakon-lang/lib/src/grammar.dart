@@ -6,13 +6,18 @@ class AlakonGrammar extends GrammarDefinition {
   @override
   Parser start() => ref0(program);
 
-  Parser program() => ref0(statement).plusGreedy(endOfInput());
+  Parser program() =>
+      ref0(statement).plus() &
+      (ref0(statement) & endOfInput())
+          .or(endOfInput(), failureJoiner: selectFarthest);
 
-  Parser token(Object input) {
+  Parser token(Object input, [String? message]) {
     if (input is Parser) {
-      return input.flatten().token().trim(char(' '));
+      return input.flatten(message).token().trim(char(' '));
     } else if (input is String) {
       return token(input.toParser());
+    } else if (input is Parser Function()) {
+      return token(ref0(input));
     }
     throw ArgumentError.value(input, 'Invalid token parser');
   }
@@ -29,7 +34,7 @@ class AlakonGrammar extends GrammarDefinition {
 
   Parser tokenStar() => ref1(token, '*');
 
-  Parser tokenSlash() => ref1(token, '*');
+  Parser tokenSlash() => ref1(token, '/');
 
   Parser tokenTrue() => ref1(token, 'true');
 
@@ -43,25 +48,37 @@ class AlakonGrammar extends GrammarDefinition {
 
   Parser numberLexicalToken() => ref1(
         token,
-        digit().plus() & ('.'.toParser() & digit().plus()).optional(),
-      );
-
-  Parser stringLexicalToken() => ref1(
-        token,
-        any().starLazy(char('"')).skip(
-              before: char('"'),
-              after: char('"'),
+        digit().plus().seq(
+              '.'
+                  .toParser()
+                  .seq(
+                    digit().plus().or(
+                          failure('Number cannot end with "."'),
+                        ),
+                  )
+                  .optional(),
             ),
       );
+
+  Parser stringLexicalToken() =>
+      ref1(token, char('"')) &
+      ref1(token, any().starLazy(char('"'))) &
+      ref1(token, char('"').or(failure('" expected')));
 
   Parser booleanLexicalToken() => tokenTrue() | tokenFalse();
 
   Parser statementEnd() => newline() | endOfInput();
 
-  Parser identifier() => ref1(token, letter() & word().star());
+  Parser identifier() => ref2(
+        token,
+        letter() & word().star(),
+        'identifier expected',
+      );
 
   /// Types
-  Parser type() => ref0(tokenNum) | ref0(tokenBool) | ref0(tokenString);
+  Parser type() => ref0(tokenNum)
+      .or(ref0(tokenBool), failureJoiner: selectFarthest)
+      .or(ref0(tokenString), failureJoiner: selectFarthest);
 
   /// Primitives
   Parser intValue() => digit().plus();
@@ -70,23 +87,41 @@ class AlakonGrammar extends GrammarDefinition {
 
   Parser falseValue() => ref1(token, 'true');
 
-  Parser statement() =>
-      (ref0(variableDec) | ref0(variableAssign) | ref0(printStatement)) &
-      statementEnd();
+  Parser statement() => ref0(printStatement)
+      .or(ref0(variableAssign), failureJoiner: selectFarthest)
+      .or(ref0(variableDec), failureJoiner: selectFarthest);
 
   Parser variableDec() =>
       ref0(type) &
       ref0(identifier) &
-      (ref0(tokenEquals) & ref0(expression)).optional();
+      (statementEnd() |
+          (ref0(tokenEquals) &
+              ref0(expression).or(failure('Expression expected'),
+                  failureJoiner: selectFarthest) &
+              statementEnd()));
 
   Parser variableAssign() =>
-      ref0(identifier) & ref0(tokenEquals) & ref0(expression);
+      ref0(identifier) &
+      ref0(tokenEquals) &
+      ref0(expression).or(failure('Expression expected')) &
+      statementEnd();
 
   Parser printStatement() =>
       ref1(token, 'print') &
-      ref0(tokenLeftParen).trim() &
-      ref0(expression) &
-      ref0(tokenRightParen).trim();
+      ref0(tokenLeftParen) &
+      ref0(expression).or(
+        failure('Expression expected'),
+        failureJoiner: selectFarthest,
+      ) &
+      ref0(tokenRightParen) &
+      statementEnd();
+
+  Parser identifierExpression() => ref0(identifier);
+
+  Parser primitiveExpression() => ref0(numberLexicalToken)
+      .or(ref0(booleanLexicalToken), failureJoiner: selectFarthest)
+      .or(ref0(stringLexicalToken), failureJoiner: selectFarthest)
+      .or(ref0(identifierExpression), failureJoiner: selectFarthest);
 
   /// Expressions
   ///
@@ -106,49 +141,7 @@ class AlakonGrammar extends GrammarDefinition {
   ///   * add `expr + expr`
   ///   * subtract `expr - expr`
   Parser expression() {
-    final builder = ExpressionBuilder()
-      ..primitive(
-        ref1(token, stringLexicalToken()).map(
-          (value) {
-            return StringExpressionNode(
-              value,
-            );
-          },
-        ),
-      )
-      ..primitive(
-        ref1(token, numberLexicalToken()).map(
-          (value) {
-            final numberToken = Token(
-              num.parse(value.value),
-              value.buffer,
-              value.start,
-              value.stop,
-            );
-            return NumberExpressionNode(numberToken);
-          },
-        ),
-      )
-      ..primitive(
-        ref0(booleanLexicalToken).map(
-          (value) {
-            final boolToken = Token(
-              bool.parse(value.value),
-              value.buffer,
-              value.start,
-              value.stop,
-            );
-            return BooleanExpressionNode(boolToken);
-          },
-        ),
-      )
-      ..primitive(
-        ref0(identifier).map(
-          (value) {
-            return ReferenceExpressionNode(value);
-          },
-        ),
-      );
+    final builder = ExpressionBuilder()..primitive(ref0(primitiveExpression));
 
     builder.group().wrapper(
       ref0(tokenLeftParen).trim(),
@@ -165,7 +158,7 @@ class AlakonGrammar extends GrammarDefinition {
     builder.group().prefix(
       ref0(tokenMinus).trim(),
       (minus, value) {
-        return NegatedExpressionNode(expression: minus, tokenMinus: value);
+        return NegatedExpressionNode(expression: value, tokenMinus: minus);
       },
     );
 

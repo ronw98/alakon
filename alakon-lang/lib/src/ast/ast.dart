@@ -4,16 +4,6 @@ import 'expressions.dart';
 
 export 'expressions.dart';
 
-class CodePosition {
-  const CodePosition({
-    required this.line,
-    required this.column,
-  });
-
-  final int line;
-  final int column;
-}
-
 abstract interface class AstVisitor<R> {
   R visitProgram(ProgramNode node);
 

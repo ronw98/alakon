@@ -11,12 +11,8 @@ class AlakonAnalyzer {
   /// Throws an [AnalysisException] if at least one semantic error is found.
   /// The thrown exception will contain all the errors found in the analyzed
   /// program.
-  void analyze(AstNode code) {
-    final result = code.accept(_AnalyzerVisitor());
-
-    if(result.hasError) {
-      throw AnalysisException(result);
-    }
+  AnalysisResult analyze(AstNode code) {
+    return code.accept(_AnalyzerVisitor());
   }
 }
 

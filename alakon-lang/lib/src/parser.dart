@@ -12,7 +12,7 @@ class AlakonParser extends AlakonGrammar {
             [
               final type,
               final name,
-              [final tokenEq, final assign],
+              [final tokenEq, final assign, _],
             ] =>
               VariableDeclarationNode(
                 variableType: type,
@@ -33,7 +33,8 @@ class AlakonParser extends AlakonGrammar {
   Parser variableAssign() => super.variableAssign().map(
         (value) {
           return switch (value) {
-            [final variable, final tokenEq, final assign] => VariableAssignNode(
+            [final variable, final tokenEq, final assign, _] =>
+              VariableAssignNode(
                 variableName: variable,
                 assign: assign,
                 tokenEquals: tokenEq,
@@ -51,7 +52,8 @@ class AlakonParser extends AlakonGrammar {
               final Token<String> print,
               final leftParen,
               final exp,
-              final rightParen
+              final rightParen,
+              _,
             ] =>
               PrintNode(
                 printToken: print,
@@ -68,7 +70,7 @@ class AlakonParser extends AlakonGrammar {
   Parser statement() => super.statement().map(
         (value) {
           return switch (value) {
-            [final StatementNode statement, _] => statement,
+            final StatementNode statement => statement,
             _ => throw Error(),
           };
         },
@@ -77,7 +79,68 @@ class AlakonParser extends AlakonGrammar {
   @override
   Parser program() => super.program().map(
         (value) {
-          return ProgramNode(statements: value.cast<StatementNode>());
+          return switch (value) {
+            [final List statements, _]
+                when statements.all((e) => e is StatementNode) =>
+              ProgramNode(
+                statements: statements.whereType<StatementNode>().toList(),
+              ),
+            _ => throw Error(),
+          };
         },
       );
+
+  @override
+  Parser numberLexicalToken() => super.numberLexicalToken().map(
+        (value) {
+          final numberToken = Token(
+            num.parse(value.value),
+            value.buffer,
+            value.start,
+            value.stop,
+          );
+          return NumberExpressionNode(numberToken);
+        },
+      );
+
+  @override
+  Parser booleanLexicalToken() => super.booleanLexicalToken().map(
+        (value) {
+          final boolToken = Token(
+            bool.parse(value.value),
+            value.buffer,
+            value.start,
+            value.stop,
+          );
+          return BooleanExpressionNode(boolToken);
+        },
+      );
+
+  @override
+  Parser stringLexicalToken() => super.stringLexicalToken().map(
+        (value) {
+          return switch (value) {
+            [final leftQuote, final value, final rightQuote] =>
+              StringExpressionNode(
+                value: value,
+                leftQuotes: leftQuote,
+                rightQuotes: rightQuote,
+              ),
+            _ => throw Error(),
+          };
+        },
+      );
+
+  @override
+  Parser identifierExpression() => super.identifierExpression().map(
+        (value) {
+          return ReferenceExpressionNode(value);
+        },
+      );
+}
+
+extension ListExt<T> on List<T> {
+  bool all(bool Function(T) predicate) {
+    return !this.any((e) => !predicate(e));
+  }
 }
