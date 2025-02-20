@@ -20,6 +20,11 @@ function alakon(hljs) {
     ]
   };
 
+  const NUM = {
+    scope: 'number',
+    match: /[0-9]+(\.[0-9]+)?/
+  }
+
   const BUILT_IN_TYPES = [
     'String',
     'bool',
@@ -29,7 +34,7 @@ function alakon(hljs) {
 
   const KEYWORDS = {
     keyword: BASIC_KEYWORDS,
-    built_in: BUILT_IN_TYPES,
+    builtIn: BUILT_IN_TYPES,
     $pattern: /[A-Za-z][A-Za-z0-9_]*/
   };
 
@@ -38,7 +43,7 @@ function alakon(hljs) {
     keywords: KEYWORDS,
     contains: [
       STRING,
-      hljs.C_NUMBER_MODE,
+      NUM,
       // TODO: variable should be contained within specific cases (such as variable dec or variable assign matches). Setting it like that will transform keywords into variables.
 //      {
 //        className: 'variable',

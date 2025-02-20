@@ -1,6 +1,9 @@
-import 'package:editor/view/better_editor_panel/better_editor_panel.dart';
+import 'package:editor/code_run_cubit.dart';
 import 'package:editor/view/console_panel/console_panel.dart';
+import 'package:editor/view/editor_panel/editor_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gap/gap.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -12,11 +15,18 @@ class HomePage extends StatelessWidget {
         title: Text('Alakon editor'),
       ),
       body: SafeArea(
-        child: Row(
-          children: [
-            Expanded(child: BetterEditorPanel()),
-            Expanded(child: ConsolePanel()),
-          ],
+        child: BlocProvider(
+          create: (context) => CodeRunCubit(),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(child: EditorPanel()),
+                Gap(4),
+                Expanded(child: ConsolePanel()),
+              ],
+            ),
+          ),
         ),
       ),
     );

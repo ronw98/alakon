@@ -11,7 +11,7 @@ class TextSpanStyler {
   /// [onExit] is called when it leaves it.
   TextSpan styleCharacterAt(
     TextSpan textSpan,
-    TextStyle textStyle,
+    TextStyle? textStyle,
     int position,
     void Function(Offset) onEntry,
     void Function() onExit,
@@ -33,7 +33,7 @@ class TextSpanStyler {
   /// the span.
   TextSpan _styleCharacterAt(
     TextSpan textSpan,
-    TextStyle textStyle,
+    TextStyle? textStyle,
     int position,
     void Function(Offset) onEntry,
     void Function() onExit,

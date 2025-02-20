@@ -7,12 +7,12 @@ final langAlakon = Mode(
     name: "Alakon",
     keywords: {
       "keyword": ["true", "false"],
-      "built_in": ["String", "bool", "num"],
+      "builtIn": ["String", "bool", "num"],
       "\$pattern": "[A-Za-z][A-Za-z0-9_]*"
     },
     contains: <Mode>[
       Mode(
           className: 'string',
           variants: <Mode>[Mode(begin: "\"", end: "\"", illegal: "\\n")]),
-      C_NUMBER_MODE
+      Mode(scope: 'number', match: "[0-9]+(\\.[0-9]+)?")
     ]);

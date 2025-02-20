@@ -1,20 +1,45 @@
-import 'package:editor/src/generated/alakon.dart';
 import 'package:editor/view/theme/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:re_editor/re_editor.dart';
 
+enum LanguageElement {
+  /// Language keyword, such as true, false, if, false...
+  keyword,
+
+  /// Builtin types
+  builtIn,
+
+  /// Reference to a previously declared variable
+  variableRef,
+
+  /// Number lexical token
+  number,
+
+  /// String lexical token
+  string,
+}
+
+/// Syntax highlighting theme for Alakon editor.
 class AlakonCodeTheme {
-  static Map<String, TextStyle> buildTheme(BuildContext context) {
+  /// Full AST highlighting theme.
+  static Map<LanguageElement, TextStyle> buildAstTheme(BuildContext context) {
     final extensions = Theme.of(context).editorColors;
     return {
-      'built_in': TextStyle(color: extensions.keyword.color),
-      'string': TextStyle(color: extensions.string.color),
-      'number': TextStyle(color: extensions.number.color),
-      'keyword': TextStyle(color: extensions.keyword.color),
+      LanguageElement.keyword: TextStyle(color: extensions.keyword.color),
+      LanguageElement.number: TextStyle(color: extensions.number.color),
+      LanguageElement.string: TextStyle(color: extensions.string.color),
+      LanguageElement.builtIn: TextStyle(color: extensions.keyword.color),
+      LanguageElement.variableRef: TextStyle(color: Colors.purple.shade200),
     };
   }
 
-  static Map<String, CodeHighlightThemeMode> get language => {
-        'alakon': CodeHighlightThemeMode(mode: langAlakon),
-      };
+  /// Basic highlighting theme.
+  static Map<String, TextStyle> buildReTheme(BuildContext context) {
+    final extensions = Theme.of(context).editorColors;
+    return {
+      LanguageElement.keyword.name: TextStyle(color: extensions.keyword.color),
+      LanguageElement.string.name: TextStyle(color: extensions.string.color),
+      LanguageElement.number.name: TextStyle(color: extensions.number.color),
+      LanguageElement.builtIn.name: TextStyle(color: extensions.keyword.color),
+    };
+  }
 }

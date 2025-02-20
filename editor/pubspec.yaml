@@ -19,6 +19,9 @@ dependencies:
   re_editor: ^0.6.0
   easy_debounce: ^2.0.3
   gap: ^3.0.1
+  flutter_bloc: ^9.0.0
+  equatable: ^2.0.7
+  basic_utils: ^5.7.0
 
 dev_dependencies:
   flutter_test:
