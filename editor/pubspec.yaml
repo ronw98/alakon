@@ -1,0 +1,42 @@
+name: editor
+description: "Editor for the alakon language"
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  alakon_lang: ^0.0.1
+  google_fonts: ^6.2.1
+  re_highlight: ^0.0.3
+  re_editor: ^0.6.0
+  easy_debounce: ^2.0.3
+  gap: ^3.0.1
+  flutter_bloc: ^9.0.0
+  equatable: ^2.0.7
+  basic_utils: ^5.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  r_flutter: ^0.9.0
+  build_runner: ^2.4.14
+
+
+# The following section is specific to Flutter packages.
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Monocraft
+      fonts:
+        - asset: fonts/monocraft/Monocraft.ttf
+        - asset: fonts/monocraft/Monocraft-Italic.ttf
+          style: italic
