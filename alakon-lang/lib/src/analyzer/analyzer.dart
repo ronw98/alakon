@@ -593,6 +593,22 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
     }
     return result;
   }
+
+  @override
+  AnalysisResult visitWhile(WhileNode node) {
+    final result = node.condition.accept(this);
+    final expressionType = _latestExpressionType;
+    if (expressionType != _kTypeBool) {
+      result.recordError(
+        TypeMismatchError(
+          begin: node.condition.beginToken,
+          end: node.condition.endToken,
+          message: 'Expected $_kTypeBool but got $expressionType',
+        ),
+      );
+    }
+    return result;
+  }
 }
 
 class _VariableDeclaration {

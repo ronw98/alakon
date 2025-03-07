@@ -136,6 +136,7 @@ class CodeRunCubit extends Cubit<CodeRunState> {
   /// prints and errors encountered during the execution of the program.
   void _execute(ProgramNode program) {
     final programElement = _elementTreeBuilder.build(program);
+    // TODO: run in isolate to allow for stupidly long loops or computations.
     programElement.run(
       stderr: (error) {
         final newOutput = CodeStderr(data: error);

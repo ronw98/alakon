@@ -19,6 +19,8 @@ class AlakonGrammar extends GrammarDefinition {
     throw ArgumentError.value(input, 'Invalid token parser');
   }
 
+  Parser tokenWhile() => ref1(token, 'while');
+
   Parser tokenIf() => ref1(token, 'if');
 
   Parser tokenElse() => ref1(token, 'else');
@@ -109,6 +111,7 @@ class AlakonGrammar extends GrammarDefinition {
           .or(ref0(variableAssign), failureJoiner: selectFarthest)
           .or(ref0(variableDec), failureJoiner: selectFarthest)
           .or(ref0(ifElse), failureJoiner: selectFarthest))
+      .or(ref0(whileLoop), failureJoiner: selectFarthest)
       .trim();
 
   Parser ifElse() =>
@@ -123,6 +126,13 @@ class AlakonGrammar extends GrammarDefinition {
               whitespace().star() &
               ref0(statementOrBlock))
           .optional();
+
+  Parser whileLoop() =>
+      ref0(tokenWhile) &
+      ref0(tokenLeftParen) &
+      ref0(expression) &
+      ref0(tokenRightParen) &
+      ref0(statementOrBlock).trim();
 
   Parser statementOrBlock() =>
       ref0(statement).or(ref0(block), failureJoiner: selectFarthest);

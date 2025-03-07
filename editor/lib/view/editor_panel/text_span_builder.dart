@@ -216,6 +216,19 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
     );
   }
 
+  @override
+  TextSpan visitWhile(WhileNode node) {
+    return _writeList(
+      [
+        node.whileToken.toBuilder(theme[LanguageElement.keyword]),
+        node.condLeftParen.toBuilder(),
+        node.condition.toBuilder(),
+        node.condRightParen.toBuilder(),
+        node.body.toBuilder(),
+      ].nonNulls.toList(),
+    );
+  }
+
   /// Writes the text span for a two factor operation, such as addition,
   /// subtraction, multiplication or division.
   TextSpan _writeTwoFactorsOperation(OperationExpressionNode node) {
