@@ -6,10 +6,7 @@ class AlakonGrammar extends GrammarDefinition {
   @override
   Parser start() => ref0(program);
 
-  Parser program() =>
-      ref0(statement).plus() &
-      (ref0(statement) & endOfInput())
-          .or(endOfInput(), failureJoiner: selectFarthest);
+  Parser program() => ref0(statement).plus() & endOfInput();
 
   Parser token(Object input, [String? message]) {
     if (input is Parser) {
@@ -22,11 +19,19 @@ class AlakonGrammar extends GrammarDefinition {
     throw ArgumentError.value(input, 'Invalid token parser');
   }
 
+  Parser tokenIf() => ref1(token, 'if');
+
+  Parser tokenElse() => ref1(token, 'else');
+
   Parser tokenEquals() => ref1(token, '=');
 
   Parser tokenLeftParen() => ref1(token, '(');
 
   Parser tokenRightParen() => ref1(token, ')');
+
+  Parser tokenLeftBrace() => ref1(token, '{');
+
+  Parser tokenRightBrace() => ref1(token, '}');
 
   Parser tokenMinus() => ref1(token, '-');
 
@@ -35,6 +40,12 @@ class AlakonGrammar extends GrammarDefinition {
   Parser tokenStar() => ref1(token, '*');
 
   Parser tokenSlash() => ref1(token, '/');
+
+  Parser tokenAnd() => ref1(token, '&&');
+
+  Parser tokenOr() => ref1(token, '||');
+
+  Parser tokenNot() => ref1(token, '!');
 
   Parser tokenTrue() => ref1(token, 'true');
 
@@ -87,9 +98,34 @@ class AlakonGrammar extends GrammarDefinition {
 
   Parser falseValue() => ref1(token, 'true');
 
-  Parser statement() => ref0(printStatement)
-      .or(ref0(variableAssign), failureJoiner: selectFarthest)
-      .or(ref0(variableDec), failureJoiner: selectFarthest);
+  Parser block() =>
+      ref0(tokenLeftBrace) &
+      whitespace().star() &
+      (ref0(statement) | whitespace()).star() &
+      whitespace().star() &
+      ref0(tokenRightBrace);
+
+  Parser statement() => (ref0(printStatement)
+          .or(ref0(variableAssign), failureJoiner: selectFarthest)
+          .or(ref0(variableDec), failureJoiner: selectFarthest)
+          .or(ref0(ifElse), failureJoiner: selectFarthest))
+      .trim();
+
+  Parser ifElse() =>
+      ref0(tokenIf) &
+      ref0(tokenLeftParen) &
+      ref0(expression) &
+      ref0(tokenRightParen) &
+      whitespace().star() &
+      ref0(statementOrBlock) &
+      (whitespace().star() &
+              ref0(tokenElse) &
+              whitespace().star() &
+              ref0(statementOrBlock))
+          .optional();
+
+  Parser statementOrBlock() =>
+      ref0(statement).or(ref0(block), failureJoiner: selectFarthest);
 
   Parser variableDec() =>
       ref0(type) &
@@ -162,6 +198,16 @@ class AlakonGrammar extends GrammarDefinition {
       },
     );
 
+    builder.group().prefix(
+      ref0(tokenNot).trim(),
+      (not, value) {
+        return NotExpressionNode(
+          expression: value,
+          tokenNot: not,
+        );
+      },
+    );
+
     builder.group()
       ..left(
         ref0(tokenStar).trim(),
@@ -180,6 +226,16 @@ class AlakonGrammar extends GrammarDefinition {
             left: left,
             right: right,
             tokenOperand: tokenSlash,
+          );
+        },
+      )
+      ..left(
+        ref0(tokenAnd).trim(),
+        (left, tokenAnd, right) {
+          return AndExpressionNode(
+            left: left,
+            right: right,
+            tokenOperand: tokenAnd,
           );
         },
       );
@@ -202,6 +258,16 @@ class AlakonGrammar extends GrammarDefinition {
             left: left,
             right: right,
             tokenOperand: tokenPlus,
+          );
+        },
+      )
+      ..left(
+        ref0(tokenOr).trim(),
+        (left, tokenOr, right) {
+          return OrExpressionNode(
+            left: left,
+            right: right,
+            tokenOperand: tokenOr,
           );
         },
       );

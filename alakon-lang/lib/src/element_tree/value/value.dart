@@ -45,7 +45,7 @@ sealed class AlakonValue {
     return defaultValue;
   }
 
-  AlakonValue not(AlakonValue other) {
+  AlakonValue not() {
     return defaultValue;
   }
 

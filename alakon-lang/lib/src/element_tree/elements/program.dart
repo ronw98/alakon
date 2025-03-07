@@ -21,6 +21,14 @@ class AlakonProgram with HasVariableScope implements AlakonElement {
     }
   }
 
+  static void printError(AlakonRuntimeException error) {
+    if (stderr case final stderr?) {
+      stderr(error.message);
+    } else {
+      print(error.message);
+    }
+  }
+
   final List<AlakonStatement> statements;
 
   /// Runs the program.
@@ -33,9 +41,12 @@ class AlakonProgram with HasVariableScope implements AlakonElement {
   }) {
     AlakonProgram.stdout = stdout;
     AlakonProgram.stderr = stderr;
-
-    for (final statement in statements) {
-      statement.execute(scope);
+    try {
+      for (final statement in statements) {
+        statement.execute(scope);
+      }
+    } on AlakonRuntimeException catch (e) {
+      printError(e);
     }
   }
 }

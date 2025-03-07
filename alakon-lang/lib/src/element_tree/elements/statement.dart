@@ -1,15 +1,31 @@
 part of 'element.dart';
 
-/// Abstract class encapsulating all Alakon statement.
-///
-/// A statement can be executed.
-sealed class AlakonStatement implements AlakonElement {
-  /// Executes the statement, performing the action it specifies.
+sealed class AlakonStatementOrBlock implements AlakonElement {
+  /// Executes the statement or block, performing the action it specifies.
   ///
   /// The execution is performed within a [VariableScope], which can be read or
   /// updated if the statement contains variable references.
   void execute(VariableScope variables);
 }
+
+class AlakonBlock extends AlakonStatementOrBlock with HasVariableScope {
+  AlakonBlock({required this.statements});
+
+  final List<AlakonStatement> statements;
+
+  @override
+  void execute(VariableScope variables) {
+    scope.inherit(variables);
+    for (final statement in statements) {
+      statement.execute(scope);
+    }
+  }
+}
+
+/// Abstract class encapsulating all Alakon statement.
+///
+/// A statement can be executed.
+sealed class AlakonStatement extends AlakonStatementOrBlock {}
 
 class AlakonVariableDeclaration extends AlakonStatement {
   AlakonVariableDeclaration({
@@ -61,5 +77,33 @@ class AlakonPrint extends AlakonStatement {
     // Retrieve the variable from the current scope.
     final value = expression.resolve(variables);
     AlakonProgram.printValue(value);
+  }
+}
+
+class AlakonIf extends AlakonStatement {
+  AlakonIf(
+    this.condition,
+    this.ifBody,
+    this.elseBody,
+  );
+
+  final AlakonExpression condition;
+  final AlakonStatementOrBlock ifBody;
+  final AlakonStatementOrBlock? elseBody;
+
+  @override
+  void execute(VariableScope variables) {
+    final conditionValue = condition.resolve(variables);
+    if (conditionValue is AlakonBoolValue) {
+      if (conditionValue.value) {
+        ifBody.execute(variables);
+      } else {
+        elseBody?.execute(variables);
+      }
+    } else {
+      throw AlakonRuntimeException(
+        '${conditionValue.toPrintValue()} cannot be resolved too bool',
+      );
+    }
   }
 }
