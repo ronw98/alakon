@@ -23,15 +23,24 @@ abstract interface class AstVisitor<R> {
 
   R visitSubtractionExpression(SubtractionExpressionNode node);
 
+  R visitAndExpression(AndExpressionNode node);
+
+  R visitOrExpression(OrExpressionNode node);
+
   R visitParenthesisedExpression(ParenthesisedExpressionNode node);
 
   R visitNegatedExpression(NegatedExpressionNode node);
+  R visitNotExpression(NotExpressionNode node);
 
   R visitVariableDeclaration(VariableDeclarationNode node);
 
   R visitVariableAssign(VariableAssignNode node);
 
   R visitPrint(PrintNode node);
+
+  R visitBlock(BlockNode node);
+
+  R visitIf(IfNode node);
 }
 
 abstract class AstNode {
@@ -57,7 +66,30 @@ class ProgramNode implements AstNode {
   R accept<R>(AstVisitor<R> visitor) => visitor.visitProgram(this);
 }
 
-abstract class StatementNode implements AstNode {}
+sealed class StatementOrBlockNode implements AstNode {}
+
+class BlockNode extends StatementOrBlockNode {
+  BlockNode({
+    required this.leftBrace,
+    required this.rightBrace,
+    required this.statements,
+  });
+
+  final Token<String> leftBrace;
+  final Token<String> rightBrace;
+  final List<StatementNode> statements;
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitBlock(this);
+
+  @override
+  Token get beginToken => leftBrace;
+
+  @override
+  Token get endToken => rightBrace;
+}
+
+abstract class StatementNode extends StatementOrBlockNode {}
 
 class PrintNode extends StatementNode {
   PrintNode({
@@ -125,4 +157,33 @@ class VariableAssignNode extends StatementNode {
 
   @override
   R accept<R>(AstVisitor<R> visitor) => visitor.visitVariableAssign(this);
+}
+
+class IfNode extends StatementNode {
+  IfNode({
+    required this.ifToken,
+    required this.ifCondLeftParen,
+    required this.condition,
+    required this.ifCondRightParen,
+    required this.ifBody,
+    this.elseToken,
+    this.elseBody,
+  });
+
+  final Token<String> ifToken;
+  final Token<String> ifCondLeftParen;
+  final ExpressionNode condition;
+  final Token<String> ifCondRightParen;
+  final StatementOrBlockNode ifBody;
+  final Token<String>? elseToken;
+  final StatementOrBlockNode? elseBody;
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitIf(this);
+
+  @override
+  Token get beginToken => ifToken;
+
+  @override
+  Token get endToken => elseBody?.endToken ?? ifBody.endToken;
 }

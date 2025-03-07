@@ -52,10 +52,33 @@ class _ElementTreeBuilder implements AstVisitor<AlakonElement> {
 
   @override
   AlakonElement visitMultiplicationExpression(
-      MultiplicationExpressionNode node) {
+      MultiplicationExpressionNode node,) {
     return AlakonMultiply(
       left: node.left.accept(this) as AlakonExpression,
       right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitAndExpression(AndExpressionNode node) {
+    return AlakonAnd(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitOrExpression(OrExpressionNode node) {
+    return AlakonOr(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitNotExpression(NotExpressionNode node) {
+    return AlakonNot(
+      expression: node.expression.accept(this) as AlakonExpression,
     );
   }
 
@@ -79,14 +102,15 @@ class _ElementTreeBuilder implements AstVisitor<AlakonElement> {
 
   @override
   AlakonElement visitPrint(PrintNode node) {
-    return AlakonPrint(expression: node.expression.accept(this) as AlakonExpression);
+    return AlakonPrint(
+        expression: node.expression.accept(this) as AlakonExpression);
   }
 
   @override
   AlakonElement visitProgram(ProgramNode node) {
     return AlakonProgram(
       node.statements.map(
-        (statement) {
+            (statement) {
           return statement.accept(this) as AlakonStatement;
         },
       ).toList(),
@@ -126,5 +150,24 @@ class _ElementTreeBuilder implements AstVisitor<AlakonElement> {
       variableName: node.variableName.value,
       variableType: node.variableType.value,
     );
+  }
+
+  @override
+  AlakonElement visitBlock(BlockNode node) {
+    return AlakonBlock(
+      statements: node.statements.map(
+            (statement) {
+          return statement.accept(this) as AlakonStatement;
+        },
+      ).toList(),
+    );
+  }
+
+  @override
+  AlakonElement visitIf(IfNode node) {
+    final condition = node.condition.accept(this) as AlakonExpression;
+    final ifBody = node.ifBody.accept(this) as AlakonStatementOrBlock;
+    final elseBody = node.elseBody?.accept(this) as AlakonStatementOrBlock?;
+    return AlakonIf(condition, ifBody, elseBody);
   }
 }

@@ -137,6 +137,75 @@ class AlakonParser extends AlakonGrammar {
           return ReferenceExpressionNode(value);
         },
       );
+
+  @override
+  Parser block() => super.block().map(
+        (value) {
+          return switch (value) {
+            [
+              final Token<String> leftBrace,
+              _,
+              final List statements,
+              _,
+              final Token<String> rightBrace
+            ] =>
+              BlockNode(
+                leftBrace: leftBrace,
+                rightBrace: rightBrace,
+                statements: statements.whereType<StatementNode>().toList(),
+              ),
+            _ => throw Exception()
+          };
+        },
+      );
+
+  @override
+  Parser ifElse() => super.ifElse().map(
+        (value) {
+          return switch (value) {
+            [
+              final Token<String> ifToken,
+              final Token<String> ifCondLeftParen,
+              final ExpressionNode condition,
+              final Token<String> ifCondRightParen,
+              _,
+              final StatementOrBlockNode ifBody,
+              [
+                _,
+                final Token<String> elseToken,
+                _,
+                final StatementOrBlockNode elseBody,
+              ],
+            ] =>
+              IfNode(
+                ifToken: ifToken,
+                ifCondLeftParen: ifCondLeftParen,
+                condition: condition,
+                ifCondRightParen: ifCondRightParen,
+                ifBody: ifBody,
+                elseToken: elseToken,
+                elseBody: elseBody,
+              ),
+            [
+              final Token<String> ifToken,
+              final Token<String> ifCondLeftParen,
+              final ExpressionNode condition,
+              final Token<String> ifCondRightParen,
+              _,
+              final StatementOrBlockNode ifBody,
+              _
+            ] =>
+              IfNode(
+                ifToken: ifToken,
+                ifCondLeftParen: ifCondLeftParen,
+                condition: condition,
+                ifCondRightParen: ifCondRightParen,
+                ifBody: ifBody,
+              ),
+            _ => throw Exception(),
+          };
+        },
+      );
 }
 
 extension ListExt<T> on List<T> {

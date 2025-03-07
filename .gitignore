@@ -7,3 +7,9 @@
 
 /.idea
 .dart_tool
+
+# FVM Version Cache
+.fvm/
+
+.flutter-plugins
+.flutter-plugins-dependencies

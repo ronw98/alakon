@@ -70,8 +70,43 @@ class AlakonParen extends AlakonExpression {
   }
 }
 
+class AlakonAnd extends AlakonExpression {
+  AlakonAnd({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables).and(right.resolve(variables));
+  }
+}
+
+class AlakonOr extends AlakonExpression {
+  AlakonOr({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables).or( right.resolve(variables));
+  }
+}
+
 class AlakonNegated extends AlakonExpression {
   AlakonNegated({required this.expression});
+
+  final AlakonExpression expression;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return expression.resolve(variables).not();
+  }
+}
+
+class AlakonNot extends AlakonExpression {
+  AlakonNot({required this.expression});
 
   final AlakonExpression expression;
 

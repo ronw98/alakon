@@ -1,5 +1,3 @@
-import 'package:collection/collection.dart';
-
 import '../ast/ast.dart';
 import 'analysis_errors.dart';
 import 'analysis_result.dart';
@@ -16,12 +14,65 @@ class AlakonAnalyzer {
   }
 }
 
-/// [AstVisitor] that returns an [AnalysisResult].
+/// An analysis scope is a set of variables.
 ///
-/// The returned result contains all the [AnalysisError]s found in the visited
-/// node.
-class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
-  final List<_VariableDeclaration> _declaredVariables = [];
+/// It contains scope variables which are variables contained within this scope.
+/// It also contains variables inherited from parent scopes.
+class _AnalysisScope {
+  _AnalysisScope({
+    required Map<String, _VariableDeclaration> scopeVariables,
+    required Map<String, _VariableDeclaration> inheritedVariables,
+  })  : _inheritedVariables = inheritedVariables,
+        _scopeVariables = scopeVariables;
+
+  _AnalysisScope.fromInheritance({required _AnalysisScope parent})
+      : this(
+          inheritedVariables: {
+            ...parent._inheritedVariables,
+            ...parent._scopeVariables
+          },
+          scopeVariables: {},
+        );
+
+  /// Retrieves the [_VariableDeclaration] for the given [variableName].
+  ///
+  /// Returns `null` if no variable of that name was declared.
+  ///
+  /// Priority is given to scope declaration and falls back on inherited
+  /// declaration.
+  _VariableDeclaration? getDeclarationFromReference(String variableName) {
+    return _scopeVariables[variableName] ?? _inheritedVariables[variableName];
+  }
+
+  /// Whether a variable with [variableName] can be declared.
+  ///
+  /// This is true if no [_scopeVariables] does not contain [variableName].
+  bool canDeclareVariable(String variableName) {
+    return !_scopeVariables.containsKey(variableName);
+  }
+
+  _VariableDeclaration declareVariable(
+      String variableName, String variableType) {
+    final declaration = _VariableDeclaration(
+      type: variableType,
+      name: variableName,
+    );
+    _scopeVariables[variableName] = declaration;
+    return declaration;
+  }
+
+  final Map<String, _VariableDeclaration> _scopeVariables;
+  final Map<String, _VariableDeclaration> _inheritedVariables;
+}
+
+/// Context of the analysis.
+///
+/// Contains the list of [_AnalysisScope]s as well as the
+/// [latestExpressionType].
+class _AnalysisContext {
+  final List<_AnalysisScope> _scopes = [
+    _AnalysisScope(scopeVariables: {}, inheritedVariables: {})
+  ];
 
   /// Stores the type of the latest expression analyzed.
   ///
@@ -33,7 +84,63 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
   /// expressionNode.accept(this);
   /// final expressionType = _latestExpressionType;
   /// ```
-  String? _latestExpressionType;
+  String? latestExpressionType;
+
+  void openScope() {
+    _scopes.add(_AnalysisScope.fromInheritance(parent: _scopes.last));
+  }
+
+  void closeScope() {
+    _scopes.removeLast();
+    if (_scopes.isEmpty) {
+      _scopes.add(
+        _AnalysisScope(scopeVariables: {}, inheritedVariables: {}),
+      );
+    }
+  }
+
+  T withinNewScope<T>(T Function() run) {
+    openScope();
+    final result = run();
+    closeScope();
+    return result;
+  }
+
+  /// See [_AnalysisScope.getDeclarationFromReference].
+  _VariableDeclaration? getDeclarationFromReference(String variableName) {
+    return _scopes.last.getDeclarationFromReference(variableName);
+  }
+
+  /// See [_AnalysisScope.canDeclareVariable].
+  bool canDeclareVariable(String variableName) {
+    return _scopes.last.canDeclareVariable(variableName);
+  }
+
+  /// See [_AnalysisScope.declareVariable].
+  _VariableDeclaration declareVariable(
+    String variableName,
+    String variableType,
+  ) {
+    return _scopes.last.declareVariable(variableName, variableType);
+  }
+}
+
+/// [AstVisitor] that returns an [AnalysisResult].
+///
+/// The returned result contains all the [AnalysisError]s found in the visited
+/// node.
+class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
+  static const _kTypeBool = 'bool';
+  static const _kTypeString = 'String';
+  static const _kTypeNum = 'num';
+
+  final _AnalysisContext _context = _AnalysisContext();
+
+  String? get _latestExpressionType => _context.latestExpressionType;
+
+  set _latestExpressionType(String? value) {
+    _context.latestExpressionType = value;
+  }
 
   @override
   AnalysisResult visitAdditionExpression(AdditionExpressionNode node) {
@@ -59,7 +166,7 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitBooleanExpression(BooleanExpressionNode node) {
-    _latestExpressionType = 'boolean';
+    _latestExpressionType = _kTypeBool;
 
     return AnalysisResult();
   }
@@ -73,19 +180,19 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
     final rightType = _latestExpressionType;
 
     final result = AnalysisResult.fromResults([leftResult, rightResult]);
-    if (leftType != 'num') {
+    if (leftType != _kTypeNum) {
       result.recordError(
         TypeMismatchError(
-          message: 'Expected num but got $leftType',
+          message: 'Expected $_kTypeNum but got $leftType',
           begin: node.left.beginToken,
           end: node.left.endToken,
         ),
       );
     }
-    if (rightType != 'num') {
+    if (rightType != _kTypeNum) {
       result.recordError(
         TypeMismatchError(
-          message: 'Expected num but got $rightType',
+          message: 'Expected $_kTypeNum but got $rightType',
           begin: node.right.beginToken,
           end: node.right.endToken,
         ),
@@ -97,7 +204,8 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitMultiplicationExpression(
-      MultiplicationExpressionNode node) {
+    MultiplicationExpressionNode node,
+  ) {
     final leftAnalysis = node.left.accept(this);
     final leftType = _latestExpressionType;
 
@@ -107,34 +215,34 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
     final result = AnalysisResult.fromResults([leftAnalysis, rightAnalysis]);
 
     switch ((leftType, rightType)) {
-      case ('String', _):
+      case (_kTypeString, _):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got String',
+            message: 'Expected $_kTypeNum but got $_kTypeString',
             begin: node.left.beginToken,
             end: node.left.endToken,
           ),
         );
-      case (_, 'String'):
+      case (_, _kTypeString):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got String',
+            message: 'Expected $_kTypeNum but got $_kTypeString',
             begin: node.right.beginToken,
             end: node.right.endToken,
           ),
         );
-      case ('bool', _):
+      case (_kTypeBool, _):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got bool',
+            message: 'Expected $_kTypeNum but got $_kTypeBool',
             begin: node.left.beginToken,
             end: node.left.endToken,
           ),
         );
-      case (_, 'bool'):
+      case (_, _kTypeBool):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got bool',
+            message: 'Expected $_kTypeNum but got $_kTypeBool',
             begin: node.right.beginToken,
             end: node.right.endToken,
           ),
@@ -147,22 +255,134 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
   @override
   AnalysisResult visitNegatedExpression(NegatedExpressionNode node) {
     final analysisResult = node.expression.accept(this);
-    if (_latestExpressionType != 'num') {
+    if (_latestExpressionType != _kTypeNum) {
       analysisResult.recordError(
         TypeMismatchError(
-          message: 'Expected num but got $_latestExpressionType',
+          message: 'Expected $_kTypeNum but got $_latestExpressionType',
           begin: node.expression.beginToken,
           end: node.expression.beginToken,
         ),
       );
     }
-    _latestExpressionType = 'num';
+    _latestExpressionType = _kTypeNum;
+    return analysisResult;
+  }
+
+  @override
+  AnalysisResult visitAndExpression(AndExpressionNode node) {
+    final leftAnalysis = node.left.accept(this);
+    final leftType = _latestExpressionType;
+
+    final rightAnalysis = node.right.accept(this);
+    final rightType = _latestExpressionType;
+
+    final result = AnalysisResult.fromResults([leftAnalysis, rightAnalysis]);
+
+    switch ((leftType, rightType)) {
+      case (_kTypeString, _):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeString',
+            begin: node.left.beginToken,
+            end: node.left.endToken,
+          ),
+        );
+      case (_, _kTypeString):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeString',
+            begin: node.right.beginToken,
+            end: node.right.endToken,
+          ),
+        );
+      case (_kTypeNum, _):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeNum',
+            begin: node.left.beginToken,
+            end: node.left.endToken,
+          ),
+        );
+      case (_, _kTypeNum):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeNum',
+            begin: node.right.beginToken,
+            end: node.right.endToken,
+          ),
+        );
+    }
+    _latestExpressionType = leftType;
+    return result;
+  }
+
+  @override
+  AnalysisResult visitOrExpression(OrExpressionNode node) {
+    final leftAnalysis = node.left.accept(this);
+    final leftType = _latestExpressionType;
+
+    final rightAnalysis = node.right.accept(this);
+    final rightType = _latestExpressionType;
+
+    final result = AnalysisResult.fromResults([leftAnalysis, rightAnalysis]);
+
+    switch ((leftType, rightType)) {
+      case (_kTypeString, _):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeString',
+            begin: node.left.beginToken,
+            end: node.left.endToken,
+          ),
+        );
+      case (_, _kTypeString):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeString',
+            begin: node.right.beginToken,
+            end: node.right.endToken,
+          ),
+        );
+      case (_kTypeNum, _):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeNum',
+            begin: node.left.beginToken,
+            end: node.left.endToken,
+          ),
+        );
+      case (_, _kTypeNum):
+        result.recordError(
+          TypeMismatchError(
+            message: 'Expected $_kTypeBool but got $_kTypeNum',
+            begin: node.right.beginToken,
+            end: node.right.endToken,
+          ),
+        );
+    }
+    _latestExpressionType = leftType;
+    return result;
+  }
+
+  @override
+  AnalysisResult visitNotExpression(NotExpressionNode node) {
+    final analysisResult = node.expression.accept(this);
+    if (_latestExpressionType != _kTypeBool) {
+      analysisResult.recordError(
+        TypeMismatchError(
+          message: 'Expected $_kTypeBool but got $_latestExpressionType',
+          begin: node.expression.beginToken,
+          end: node.expression.beginToken,
+        ),
+      );
+    }
+    _latestExpressionType = _kTypeBool;
     return analysisResult;
   }
 
   @override
   AnalysisResult visitNumberExpression(NumberExpressionNode node) {
-    _latestExpressionType = 'num';
+    _latestExpressionType = _kTypeNum;
     return AnalysisResult();
   }
 
@@ -176,8 +396,9 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
   @override
   AnalysisResult visitReferenceExpression(ReferenceExpressionNode node) {
     final variableName = node.value;
-    final resolvedReference = _declaredVariables
-        .firstWhereOrNull((dec) => dec.name == variableName.value);
+    final resolvedReference = _context.getDeclarationFromReference(
+      variableName.value,
+    );
 
     final result = AnalysisResult();
     if (resolvedReference == null) {
@@ -197,7 +418,7 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitStringExpression(StringExpressionNode node) {
-    _latestExpressionType = 'String';
+    _latestExpressionType = _kTypeString;
     return AnalysisResult();
   }
 
@@ -216,34 +437,34 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       ],
     );
     switch ((leftType, rightType)) {
-      case ('String', _):
+      case (_kTypeString, _):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got String',
+            message: 'Expected $_kTypeNum but got $_kTypeString',
             begin: node.left.beginToken,
             end: node.left.endToken,
           ),
         );
-      case (_, 'String'):
+      case (_, _kTypeString):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got String',
+            message: 'Expected $_kTypeNum but got $_kTypeString',
             begin: node.right.beginToken,
             end: node.right.endToken,
           ),
         );
-      case ('bool', _):
+      case (_kTypeBool, _):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got bool',
+            message: 'Expected $_kTypeNum but got $_kTypeBool',
             begin: node.left.beginToken,
             end: node.left.endToken,
           ),
         );
-      case (_, 'bool'):
+      case (_, _kTypeBool):
         result.recordError(
           TypeMismatchError(
-            message: 'Expected num but got bool',
+            message: 'Expected $_kTypeNum but got $_kTypeBool',
             begin: node.right.beginToken,
             end: node.right.endToken,
           ),
@@ -264,7 +485,7 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitVariableAssign(VariableAssignNode node) {
-    final variableDec = _getVariableDecFromName(
+    final variableDec = _context.getDeclarationFromReference(
       node.variableName.value,
     );
     final result = AnalysisResult();
@@ -295,9 +516,11 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitVariableDeclaration(VariableDeclarationNode node) {
-    final variableDec = _getVariableDecFromName(node.variableName.value);
+    final canDeclareVariable = _context.canDeclareVariable(
+      node.variableName.value,
+    );
     final result = AnalysisResult();
-    if (variableDec != null) {
+    if (!canDeclareVariable) {
       result.recordError(
         ReuseError(
           message: 'Name ${node.variableName.value} is already used',
@@ -321,27 +544,56 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
       }
     }
 
-    _declaredVariables.add(
-      _VariableDeclaration(
-        type: node.variableType.value,
-        name: node.variableName.value,
-      ),
-    );
-    return result;
-  }
+    if (canDeclareVariable) {
+      _context.declareVariable(
+        node.variableName.value,
+        node.variableType.value,
+      );
+    }
 
-  _VariableDeclaration? _getVariableDecFromName(String variableName) {
-    return _declaredVariables.firstWhereOrNull(
-      (dec) => dec.name == variableName,
-    );
+    return result;
   }
 
   @override
   AnalysisResult visitPrint(PrintNode node) {
     return node.expression.accept(this);
   }
-}
 
+  @override
+  AnalysisResult visitBlock(BlockNode node) {
+    return AnalysisResult.fromResults(
+      [
+        for (final statement in node.statements) statement.accept(this),
+      ],
+    );
+  }
+
+  @override
+  AnalysisResult visitIf(IfNode node) {
+    final result = node.condition.accept(this);
+    final expressionType = _latestExpressionType;
+    if (expressionType != _kTypeBool) {
+      result.recordError(
+        TypeMismatchError(
+          begin: node.condition.beginToken,
+          end: node.condition.endToken,
+          message: 'Expected $_kTypeBool but got $expressionType',
+        ),
+      );
+    }
+
+    _context.withinNewScope(
+      () => result.addResult(node.ifBody.accept(this)),
+    );
+
+    if (node.elseBody case final elseBody?) {
+      _context.withinNewScope(
+        () => result.addResult(elseBody.accept(this)),
+      );
+    }
+    return result;
+  }
+}
 
 class _VariableDeclaration {
   _VariableDeclaration({required this.type, required this.name});

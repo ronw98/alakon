@@ -45,6 +45,25 @@ class NegatedExpressionNode implements ExpressionNode {
   R accept<R>(AstVisitor<R> visitor) => visitor.visitNegatedExpression(this);
 }
 
+class NotExpressionNode implements ExpressionNode {
+  NotExpressionNode({
+    required this.expression,
+    required this.tokenNot,
+  });
+
+  final Token<String> tokenNot;
+  final ExpressionNode expression;
+
+  @override
+  Token get beginToken => tokenNot;
+
+  @override
+  Token get endToken => expression.endToken;
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitNotExpression(this);
+}
+
 abstract class LeafExpressionNode<T> implements ExpressionNode {
   LeafExpressionNode(this.value);
 
@@ -160,4 +179,28 @@ class SubtractionExpressionNode extends OperationExpressionNode {
   @override
   R accept<R>(AstVisitor<R> visitor) =>
       visitor.visitSubtractionExpression(this);
+}
+
+class AndExpressionNode extends OperationExpressionNode {
+  AndExpressionNode({
+    required super.left,
+    required super.right,
+    required super.tokenOperand,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+      visitor.visitAndExpression(this);
+}
+
+class OrExpressionNode extends OperationExpressionNode {
+  OrExpressionNode({
+    required super.left,
+    required super.right,
+    required super.tokenOperand,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) =>
+      visitor.visitOrExpression(this);
 }

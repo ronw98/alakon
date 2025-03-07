@@ -30,7 +30,7 @@ function alakon(hljs) {
     'bool',
     'num'
   ];
-  const BASIC_KEYWORDS = ['true', 'false'];
+  const BASIC_KEYWORDS = ['true', 'false', 'if', 'else'];
 
   const KEYWORDS = {
     keyword: BASIC_KEYWORDS,

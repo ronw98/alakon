@@ -114,4 +114,36 @@ class AstPrinter implements AstVisitor<String> {
     _indent--;
     return '$start\n$childrenString';
   }
+
+  @override
+  String visitBlock(BlockNode node) {
+    return _printNodeWithChildren('Block', node.statements);
+  }
+
+  @override
+  String visitIf(IfNode node) {
+    final ifPrint = _printNodeWithChildren('If', [node.condition, node.ifBody]);
+    if (node.elseBody case final elseBody?) {
+      return '$ifPrint\n${'  ' * _indent}${_printNodeWithChildren(
+        'Else',
+        [elseBody],
+      )}';
+    }
+    return ifPrint;
+  }
+
+  @override
+  String visitAndExpression(AndExpressionNode node) {
+    return _printNodeWithChildren('AndExpression', [node.left, node.right]);
+  }
+
+  @override
+  String visitNotExpression(NotExpressionNode node) {
+    return _printNodeWithChildren('NotExpression', [node.expression]);
+  }
+
+  @override
+  String visitOrExpression(OrExpressionNode node) {
+    return _printNodeWithChildren('OrExpression', [node.left, node.right]);
+  }
 }

@@ -55,7 +55,7 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
 
   @override
   TextSpan visitBooleanExpression(BooleanExpressionNode node) {
-    return _createTokenSpan(node.value, theme[LanguageElement.keyword]);
+    return _writeList([node.value.toBuilder(theme[LanguageElement.keyword])]);
   }
 
   @override
@@ -69,133 +69,96 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
   }
 
   @override
+  TextSpan visitAndExpression(AndExpressionNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitOrExpression(OrExpressionNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitNotExpression(NotExpressionNode node) {
+    return _writeList(
+      [
+        node.tokenNot.toBuilder(),
+        node.expression.toBuilder(),
+      ],
+    );
+  }
+
+  @override
   TextSpan visitNegatedExpression(NegatedExpressionNode node) {
-    final minusSpan = _createTokenSpan(node.tokenMinus);
-    final blankSpan = _writeBlanks(node.tokenMinus, node.expression.beginToken);
-    final expressionSpan = node.expression.accept(this);
-    return TextSpan(
-      children: [
-        minusSpan,
-        blankSpan,
-        expressionSpan,
+    return _writeList(
+      [
+        node.tokenMinus.toBuilder(),
+        node.expression.toBuilder(),
       ],
     );
   }
 
   @override
   TextSpan visitNumberExpression(NumberExpressionNode node) {
-    return _createTokenSpan(node.value, theme[LanguageElement.number]);
+    return _writeList([node.value.toBuilder(theme[LanguageElement.number])]);
   }
 
   @override
   TextSpan visitParenthesisedExpression(ParenthesisedExpressionNode node) {
-    final leftParenSpan = _createTokenSpan(node.tokenLeftParen);
-    final leftSpace = _writeBlanks(
-      node.tokenLeftParen,
-      node.expression.beginToken,
-    );
-    final expressionSpan = node.expression.accept(this);
-    final rightSpace = _writeBlanks(
-      node.expression.endToken,
-      node.tokenRightParen,
-    );
-    final rightParenSpan = _createTokenSpan(node.tokenRightParen);
-    return TextSpan(
-      children: [
-        leftParenSpan,
-        leftSpace,
-        expressionSpan,
-        rightSpace,
-        rightParenSpan,
+    return _writeList(
+      [
+        node.tokenLeftParen.toBuilder(),
+        node.expression.toBuilder(),
+        node.tokenRightParen.toBuilder(),
       ],
     );
   }
 
   @override
   TextSpan visitPrint(PrintNode node) {
-    final printSpan = _createTokenSpan(node.printToken);
-    final printSpace = _writeBlanks(node.printToken, node.tokenLeftParen);
-    final leftParenSpan = _createTokenSpan(node.tokenLeftParen);
-    final leftSpace = _writeBlanks(
-      node.tokenLeftParen,
-      node.expression.beginToken,
-    );
-    final expressionSpan = node.expression.accept(this);
-    final rightSpace = _writeBlanks(
-      node.expression.endToken,
-      node.tokenRightParen,
-    );
-    final rightParenSpan = _createTokenSpan(node.tokenRightParen);
-    return TextSpan(
-      children: [
-        printSpan,
-        printSpace,
-        leftParenSpan,
-        leftSpace,
-        expressionSpan,
-        rightSpace,
-        rightParenSpan,
+    return _writeList(
+      [
+        node.printToken.toBuilder(),
+        node.tokenLeftParen.toBuilder(),
+        node.expression.toBuilder(),
+        node.tokenRightParen.toBuilder(),
       ],
     );
   }
 
   @override
   TextSpan visitProgram(ProgramNode node) {
-    final List<TextSpan> spans = [];
-    for (int i = 0; i < node.statements.length; i++) {
-      if (i == 0) {
-        spans.add(
-          TextSpan(
-            text: rawText.substring(0, node.statements[i].beginToken.start),
-          ),
-        );
-      } else {
-        spans.add(
-          TextSpan(
-            text: rawText.substring(
-              node.statements[i - 1].endToken.stop,
-              node.statements[i].beginToken.start,
-            ),
-          ),
-        );
-      }
-      spans.add(node.statements[i].accept(this));
-      if (i == node.statements.length - 1) {
-        spans.add(
-          TextSpan(
-            text: rawText.substring(node.statements[i].endToken.stop),
-          ),
-        );
-      }
-    }
+    final startBlank = _writeBlanks(
+      null,
+      node.statements.firstOrNull?.beginToken,
+    );
+    final statements = _writeList(node.statements.toBuilder());
+    // Do not write anything if no statements as it would duplicate
+    // [startBlank].
+    final endBlank = node.statements.isEmpty
+        ? null
+        : _writeBlanks(node.statements.last.endToken, null);
 
     return TextSpan(
-      children: spans,
+      children: [startBlank, statements, endBlank].nonNulls.toList(),
     );
   }
 
   @override
   TextSpan visitReferenceExpression(ReferenceExpressionNode node) {
-    return _createTokenSpan(node.value, theme[LanguageElement.variableRef]);
+    return _writeList(
+      [node.value.toBuilder(theme[LanguageElement.variableRef])],
+    );
   }
 
   @override
   TextSpan visitStringExpression(StringExpressionNode node) {
-    final leftQuotesSpan = _createTokenSpan(
-      node.leftQuotes,
-      theme[LanguageElement.string],
-    );
-    final valueSpan = _createTokenSpan(
-      node.value,
-      theme[LanguageElement.string],
-    );
-    final rightQuotesSpan = _createTokenSpan(
-      node.rightQuotes,
-      theme[LanguageElement.string],
-    );
-
-    return TextSpan(
-      children: [leftQuotesSpan, valueSpan, rightQuotesSpan],
+    return _writeList(
+      [
+        node.leftQuotes.toBuilder(theme[LanguageElement.string]),
+        node.value.toBuilder(theme[LanguageElement.string]),
+        node.rightQuotes.toBuilder(theme[LanguageElement.string]),
+      ],
     );
   }
 
@@ -206,78 +169,142 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
 
   @override
   TextSpan visitVariableAssign(VariableAssignNode node) {
-    final variableSpan = _createTokenSpan(
-      node.variableName,
-      theme[LanguageElement.variableRef],
-    );
-    final variableRightSpace = _writeBlanks(
-      node.variableName,
-      node.tokenEquals,
-    );
-    final equalsSpan = _createTokenSpan(node.tokenEquals);
-    final equalsRightSpace = _writeBlanks(
-      node.tokenEquals,
-      node.assign.beginToken,
-    );
-    final assignSpan = node.assign.accept(this);
-
-    return TextSpan(
-      children: [
-        variableSpan,
-        variableRightSpace,
-        equalsSpan,
-        equalsRightSpace,
-        assignSpan,
+    return _writeList(
+      [
+        node.variableName.toBuilder(theme[LanguageElement.variableRef]),
+        node.tokenEquals.toBuilder(),
+        node.assign.toBuilder(),
       ],
     );
   }
 
   @override
   TextSpan visitVariableDeclaration(VariableDeclarationNode node) {
-    final typeSpan = _createTokenSpan(
-      node.variableType,
-      theme[LanguageElement.builtIn],
+    return _writeList(
+      [
+        node.variableType.toBuilder(theme[LanguageElement.builtIn]),
+        node.variableName.toBuilder(),
+        node.tokenEquals?.toBuilder(),
+        node.assign?.toBuilder(),
+      ].nonNulls.toList(),
     );
-    final typeRightSpace = _writeBlanks(node.variableType, node.variableName);
-    final variableSpan = _createTokenSpan(node.variableName);
-    if (node.assign != null) {
-      final variableRightSpace = _writeBlanks(
-        node.variableName,
-        node.tokenEquals!,
-      );
-      final equalsSpan = _createTokenSpan(node.tokenEquals!);
-      final equalsRightSpace = _writeBlanks(
-        node.tokenEquals!,
-        node.assign!.beginToken,
-      );
-      final assignSpan = node.assign!.accept(this);
-
-      return TextSpan(
-        children: [
-          typeSpan,
-          typeRightSpace,
-          variableSpan,
-          variableRightSpace,
-          equalsSpan,
-          equalsRightSpace,
-          assignSpan,
-        ],
-      );
-    } else {
-      return TextSpan(
-        children: [
-          typeSpan,
-          typeRightSpace,
-          variableSpan,
-        ],
-      );
-    }
   }
+
+  @override
+  TextSpan visitBlock(BlockNode node) {
+    return _writeList(
+      [
+        node.leftBrace.toBuilder(),
+        ...node.statements.toBuilder(),
+        node.rightBrace.toBuilder()
+      ],
+    );
+  }
+
+  @override
+  TextSpan visitIf(IfNode node) {
+    return _writeList(
+      [
+        node.ifToken.toBuilder(theme[LanguageElement.keyword]),
+        node.ifCondLeftParen.toBuilder(),
+        node.condition.toBuilder(),
+        node.ifCondRightParen.toBuilder(),
+        node.ifBody.toBuilder(),
+        node.elseToken?.toBuilder(theme[LanguageElement.keyword]),
+        node.elseBody?.toBuilder(),
+      ].nonNulls.toList(),
+    );
+  }
+
+  /// Writes the text span for a two factor operation, such as addition,
+  /// subtraction, multiplication or division.
+  TextSpan _writeTwoFactorsOperation(OperationExpressionNode node) {
+    return _writeList(
+      [
+        node.left.toBuilder(),
+        node.tokenOperand.toBuilder(),
+        node.right.toBuilder(),
+      ],
+    );
+  }
+
+  /// Returns a [TextSpan] that contains all the characters [start] and [stop]
+  /// token.
+  ///
+  /// If [start] is `null`, returns all characters from beginning to [stop].
+  /// If [stop] is `null`, returns all characters from [start] to end.
+  ///
+  /// If both are `null` returns [rawText].
+  TextSpan _writeBlanks(Token? start, Token? stop) {
+    return TextSpan(text: rawText.substring(start?.stop ?? 0, stop?.start));
+  }
+
+  /// Writes the list of given elements.
+  ///
+  /// This is a utility method to build the spans for the given elements, mainly
+  /// automatically building the blank characters.
+  TextSpan _writeList(List<_ElementBuilder> elements) {
+    final List<TextSpan> spans = [];
+    for (int i = 0; i < elements.length; i++) {
+      final current = elements[i];
+      if (i != 0) {
+        final prev = elements[i - 1];
+        // Write blanks between current statement and previous statement
+        final start = switch (prev) {
+          _NodeBuilder(node: final node) => node.endToken,
+          _TokenBuilder(token: final token) => token,
+        };
+
+        final stop = switch (current) {
+          _NodeBuilder(node: final node) => node.beginToken,
+          _TokenBuilder(token: final token) => token,
+        };
+        spans.add(_writeBlanks(start, stop));
+      }
+      final TextSpan currentSpan = switch (current) {
+        final _NodeBuilder nodeBuilder => nodeBuilder.createSpan(this),
+        final _TokenBuilder tokenBuilder =>
+          tokenBuilder.createSpan(analysisResult, errorStyle),
+      };
+      spans.add(currentSpan);
+    }
+
+    return TextSpan(
+      children: spans,
+    );
+  }
+}
+
+/// An element builder that builds a text span for a single element.
+sealed class _ElementBuilder {}
+
+/// Builds a text span for an [AstNode].
+class _NodeBuilder extends _ElementBuilder {
+  _NodeBuilder({required this.node});
+
+  final AstNode node;
+
+  TextSpan createSpan(TextSpanBuilder visitor) {
+    return node.accept(visitor);
+  }
+}
+
+/// Builds a text span fora [Token].
+///
+/// The span is styled with [style].
+class _TokenBuilder extends _ElementBuilder {
+  _TokenBuilder({
+    required this.token,
+    this.style,
+  });
+
+  final Token token;
+  final TextStyle? style;
 
   /// Creates the span for the given [token].
   ///
   /// Applies [style] to the returned span.
-  TextSpan _createTokenSpan(Token token, [TextStyle? style]) {
+  TextSpan createSpan(AnalysisResult? analysisResult, TextStyle? errorStyle) {
     final text = '${token.value}';
     final errors = (analysisResult?.errors ?? <AnalysisError>[]).where(
       (error) {
@@ -290,29 +317,18 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
       style: (style ?? TextStyle()).merge(errors.isEmpty ? null : errorStyle),
     );
   }
+}
 
-  /// Writes the text span for a two factor operation, such as addition,
-  /// subtraction, multiplication or division.
-  TextSpan _writeTwoFactorsOperation(OperationExpressionNode node) {
-    final leftSpan = node.left.accept(this);
-    final leftSpace = _writeBlanks(node.left.endToken, node.tokenOperand);
-    final operandSpan = _createTokenSpan(node.tokenOperand);
-    final rightSpace = _writeBlanks(node.tokenOperand, node.right.beginToken);
-    final rightSpan = node.right.accept(this);
-    return TextSpan(
-      children: [
-        leftSpan,
-        leftSpace,
-        operandSpan,
-        rightSpace,
-        rightSpan,
-      ],
-    );
+extension _TokenExt on Token {
+  _TokenBuilder toBuilder([TextStyle? style]) {
+    return _TokenBuilder(token: this, style: style);
   }
+}
 
-  /// Returns a [TextSpan] that contains all the character between current
-  /// position and [stop] token.
-  TextSpan _writeBlanks(Token start, Token stop) {
-    return TextSpan(text: rawText.substring(start.stop, stop.start));
-  }
+extension _NodeExt on AstNode {
+  _NodeBuilder toBuilder() => _NodeBuilder(node: this);
+}
+
+extension _NodeListExt on List<AstNode> {
+  List<_NodeBuilder> toBuilder() => map((e) => e.toBuilder()).toList();
 }
