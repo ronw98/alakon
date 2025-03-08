@@ -107,3 +107,27 @@ class AlakonIf extends AlakonStatement {
     }
   }
 }
+
+class AlakonWhile extends AlakonStatement {
+  AlakonWhile(
+    this.condition,
+    this.body,
+  );
+
+  final AlakonExpression condition;
+  final AlakonStatementOrBlock body;
+
+  @override
+  void execute(VariableScope variables) {
+    final conditionValue = condition.resolve(variables);
+    if (conditionValue is AlakonBoolValue) {
+      while (conditionValue.value) {
+        body.execute(variables);
+      }
+    } else {
+      throw AlakonRuntimeException(
+        '${conditionValue.toPrintValue()} cannot be resolved too bool',
+      );
+    }
+  }
+}

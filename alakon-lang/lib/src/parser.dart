@@ -206,6 +206,27 @@ class AlakonParser extends AlakonGrammar {
           };
         },
       );
+
+  @override
+  Parser whileLoop() => super.whileLoop().map((value) {
+        return switch (value) {
+          [
+            final Token<String> whileToken,
+            final Token<String> condLeftParen,
+            final ExpressionNode condition,
+            final Token<String> condRightParen,
+            final StatementOrBlockNode body,
+          ] =>
+            WhileNode(
+              whileToken: whileToken,
+              condLeftParen: condLeftParen,
+              condition: condition,
+              condRightParen: condRightParen,
+              body: body,
+            ),
+          _ => throw Exception(),
+        };
+      });
 }
 
 extension ListExt<T> on List<T> {

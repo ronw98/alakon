@@ -170,4 +170,12 @@ class _ElementTreeBuilder implements AstVisitor<AlakonElement> {
     final elseBody = node.elseBody?.accept(this) as AlakonStatementOrBlock?;
     return AlakonIf(condition, ifBody, elseBody);
   }
+
+  @override
+  AlakonElement visitWhile(WhileNode node) {
+    final condition = node.condition.accept(this) as AlakonExpression;
+    final body = node.body.accept(this) as AlakonStatementOrBlock;
+
+    return AlakonWhile(condition, body);
+  }
 }

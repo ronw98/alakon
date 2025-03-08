@@ -7,17 +7,9 @@ main() async {
   final parser = AlakonParser().build();
   final result = trace(parser).parse('''
 num a = 12
-if(false) {
-  a = 2
-}
-else {
-  a = 3
-  if(true) {
-    String b = "oui"
-  } else {
-    String b = "non"
-  }
-  print("ok")
+while(a) {
+  print(a)
+  a = a - 1
 }
 ''');
   final programNode = result.value as AstNode;

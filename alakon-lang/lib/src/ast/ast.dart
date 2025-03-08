@@ -41,6 +41,8 @@ abstract interface class AstVisitor<R> {
   R visitBlock(BlockNode node);
 
   R visitIf(IfNode node);
+
+  R visitWhile(WhileNode node);
 }
 
 abstract class AstNode {
@@ -186,4 +188,29 @@ class IfNode extends StatementNode {
 
   @override
   Token get endToken => elseBody?.endToken ?? ifBody.endToken;
+}
+
+class WhileNode extends StatementNode {
+  WhileNode({
+    required this.whileToken,
+    required this.condLeftParen,
+    required this.condition,
+    required this.condRightParen,
+    required this.body,
+  });
+
+  final Token<String> whileToken;
+  final Token<String> condLeftParen;
+  final ExpressionNode condition;
+  final Token<String> condRightParen;
+  final StatementOrBlockNode body;
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitWhile(this);
+
+  @override
+  Token get beginToken => whileToken;
+
+  @override
+  Token get endToken => body.endToken;
 }

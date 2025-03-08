@@ -6,7 +6,7 @@ final langAlakon = Mode(
     refs: {},
     name: "Alakon",
     keywords: {
-      "keyword": ["true", "false", "if", "else"],
+      "keyword": ["true", "false", "if", "else", "while"],
       "builtIn": ["String", "bool", "num"],
       "\$pattern": "[A-Za-z][A-Za-z0-9_]*"
     },

@@ -146,4 +146,9 @@ class AstPrinter implements AstVisitor<String> {
   String visitOrExpression(OrExpressionNode node) {
     return _printNodeWithChildren('OrExpression', [node.left, node.right]);
   }
+
+  @override
+  String visitWhile(WhileNode node) {
+    return _printNodeWithChildren('While', [node.condition, node.body]);
+  }
 }

@@ -1,5 +1,4 @@
 import 'package:alakon_lang/alakon_lang.dart';
-import 'package:alakon_lang/src/grammar.dart';
 import 'package:test/test.dart';
 
 main() {
@@ -127,12 +126,12 @@ main() {
 
   group('Operators association', () {
     test('Mult, div and && left associative', () {
-        final result = expressionParser.parse('1 * 5 / 6 && true * 6');
-        expect(result, isA<Success>());
-        expect(result.value, isA<MultiplicationExpressionNode>());
-        expect(result.value.left, isA<AndExpressionNode>());
-        expect(result.value.left.left, isA<DivisionExpressionNode>());
-        expect(result.value.left.left.left, isA<MultiplicationExpressionNode>());
+      final result = expressionParser.parse('1 * 5 / 6 && true * 6');
+      expect(result, isA<Success>());
+      expect(result.value, isA<MultiplicationExpressionNode>());
+      expect(result.value.left, isA<AndExpressionNode>());
+      expect(result.value.left.left, isA<DivisionExpressionNode>());
+      expect(result.value.left.left.left, isA<MultiplicationExpressionNode>());
     });
 
     test('Add, sub and || left associative', () {
