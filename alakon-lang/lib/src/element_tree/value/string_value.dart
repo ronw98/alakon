@@ -3,6 +3,7 @@ part of 'value.dart';
 class AlakonStringValue extends AlakonValue {
   AlakonStringValue(this.value);
 
+  @override
   final String value;
 
   @override

@@ -90,7 +90,79 @@ class AlakonOr extends AlakonExpression {
 
   @override
   AlakonValue resolve(VariableScope variables) {
-    return left.resolve(variables).or( right.resolve(variables));
+    return left.resolve(variables).or(right.resolve(variables));
+  }
+}
+
+class AlakonEq extends AlakonExpression {
+  AlakonEq({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables).equals(right.resolve(variables));
+  }
+}
+
+class AlakonNEq extends AlakonExpression {
+  AlakonNEq({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables).notEquals(right.resolve(variables));
+  }
+}
+
+class AlakonGT extends AlakonExpression {
+  AlakonGT({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables) > right.resolve(variables);
+  }
+}
+
+class AlakonGEq extends AlakonExpression {
+  AlakonGEq({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables) >= right.resolve(variables);
+  }
+}
+
+class AlakonLT extends AlakonExpression {
+  AlakonLT({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables) < right.resolve(variables);
+  }
+}
+
+class AlakonLEq extends AlakonExpression {
+  AlakonLEq({required this.left, required this.right});
+
+  final AlakonExpression left;
+  final AlakonExpression right;
+
+  @override
+  AlakonValue resolve(VariableScope variables) {
+    return left.resolve(variables) <= right.resolve(variables);
   }
 }
 

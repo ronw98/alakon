@@ -117,7 +117,7 @@ class ReferenceExpressionNode extends LeafExpressionNode<String> {
   R accept<R>(AstVisitor<R> visitor) => visitor.visitReferenceExpression(this);
 }
 
-abstract class OperationExpressionNode implements ExpressionNode {
+sealed class OperationExpressionNode implements ExpressionNode {
   OperationExpressionNode({
     required this.left,
     required this.right,
@@ -189,8 +189,7 @@ class AndExpressionNode extends OperationExpressionNode {
   });
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-      visitor.visitAndExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitAndExpression(this);
 }
 
 class OrExpressionNode extends OperationExpressionNode {
@@ -201,6 +200,85 @@ class OrExpressionNode extends OperationExpressionNode {
   });
 
   @override
-  R accept<R>(AstVisitor<R> visitor) =>
-      visitor.visitOrExpression(this);
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitOrExpression(this);
+}
+
+sealed class ComparisonExpressionNode extends OperationExpressionNode {
+  ComparisonExpressionNode({
+    required super.left,
+    required super.right,
+    required Token<String> tokenComparator,
+  }):super(tokenOperand: tokenComparator);
+}
+
+/// Equal to ==
+class EqualComparisonNode extends ComparisonExpressionNode {
+  EqualComparisonNode({
+    required super.left,
+    required super.right,
+    required super.tokenComparator,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitEq(this);
+}
+
+/// Not equal to !=
+class NEqComparisonNode extends ComparisonExpressionNode {
+  NEqComparisonNode({
+    required super.left,
+    required super.right,
+    required super.tokenComparator,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitNEq(this);
+}
+
+/// Greater than >
+class GTComparisonNode extends ComparisonExpressionNode {
+  GTComparisonNode({
+    required super.left,
+    required super.right,
+    required super.tokenComparator,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitGT(this);
+}
+
+/// Greater than or equal to >=
+class GEqComparisonNode extends ComparisonExpressionNode {
+  GEqComparisonNode({
+    required super.left,
+    required super.right,
+    required super.tokenComparator,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitGEq(this);
+}
+
+/// Less than <
+class LTComparisonNode extends ComparisonExpressionNode {
+  LTComparisonNode({
+    required super.left,
+    required super.right,
+    required super.tokenComparator,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitLT(this);
+}
+
+/// Less than or equal to
+class LEqComparisonNode extends ComparisonExpressionNode {
+  LEqComparisonNode({
+    required super.left,
+    required super.right,
+    required super.tokenComparator,
+  });
+
+  @override
+  R accept<R>(AstVisitor<R> visitor) => visitor.visitLEq(this);
 }

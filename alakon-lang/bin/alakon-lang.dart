@@ -6,11 +6,7 @@ import 'package:petitparser/debug.dart';
 main() async {
   final parser = AlakonParser().build();
   final result = trace(parser).parse('''
-num a = 12
-while(a) {
-  print(a)
-  a = a - 1
-}
+print(1 + 1 < 2 && false)
 ''');
   final programNode = result.value as AstNode;
   print(programNode.accept(AstPrinter()));

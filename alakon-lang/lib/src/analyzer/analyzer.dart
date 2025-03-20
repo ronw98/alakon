@@ -2,6 +2,8 @@ import '../ast/ast.dart';
 import 'analysis_errors.dart';
 import 'analysis_result.dart';
 
+part 'default_methods.dart';
+
 /// Analyzer of the alakon language.
 class AlakonAnalyzer {
   /// Analyzes the given [code].
@@ -71,7 +73,10 @@ class _AnalysisScope {
 /// [latestExpressionType].
 class _AnalysisContext {
   final List<_AnalysisScope> _scopes = [
-    _AnalysisScope(scopeVariables: {}, inheritedVariables: {})
+    _AnalysisScope(
+      scopeVariables: {},
+      inheritedVariables: {},
+    )
   ];
 
   /// Stores the type of the latest expression analyzed.
@@ -144,24 +149,11 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitAdditionExpression(AdditionExpressionNode node) {
-    final leftResult = node.left.accept(this);
-    final leftType = _latestExpressionType;
-
-    final rightResult = node.right.accept(this);
-    final rightType = _latestExpressionType;
-
-    final result = AnalysisResult.fromResults([leftResult, rightResult]);
-    if (leftType != rightType && leftType != null) {
-      result.recordError(
-        TypeMismatchError(
-          message: 'Expected type $leftType but got $rightType',
-          begin: node.right.beginToken,
-          end: node.right.endToken,
-        ),
-      );
-    }
-    _latestExpressionType = leftType;
-    return result;
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.add,
+      takesLeftType: true,
+    );
   }
 
   @override
@@ -173,210 +165,143 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitDivisionExpression(DivisionExpressionNode node) {
-    final leftResult = node.left.accept(this);
-    final leftType = _latestExpressionType;
-
-    final rightResult = node.right.accept(this);
-    final rightType = _latestExpressionType;
-
-    final result = AnalysisResult.fromResults([leftResult, rightResult]);
-    if (leftType != _kTypeNum) {
-      result.recordError(
-        TypeMismatchError(
-          message: 'Expected $_kTypeNum but got $leftType',
-          begin: node.left.beginToken,
-          end: node.left.endToken,
-        ),
-      );
-    }
-    if (rightType != _kTypeNum) {
-      result.recordError(
-        TypeMismatchError(
-          message: 'Expected $_kTypeNum but got $rightType',
-          begin: node.right.beginToken,
-          end: node.right.endToken,
-        ),
-      );
-    }
-    _latestExpressionType = leftType;
-    return result;
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.divide,
+      takesLeftType: true,
+    );
   }
 
   @override
   AnalysisResult visitMultiplicationExpression(
     MultiplicationExpressionNode node,
   ) {
-    final leftAnalysis = node.left.accept(this);
-    final leftType = _latestExpressionType;
-
-    final rightAnalysis = node.right.accept(this);
-    final rightType = _latestExpressionType;
-
-    final result = AnalysisResult.fromResults([leftAnalysis, rightAnalysis]);
-
-    switch ((leftType, rightType)) {
-      case (_kTypeString, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeString',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeString):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeString',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-      case (_kTypeBool, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeBool',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeBool):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeBool',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-    }
-    _latestExpressionType = leftType;
-    return result;
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.multiply,
+      takesLeftType: true,
+    );
   }
 
   @override
   AnalysisResult visitNegatedExpression(NegatedExpressionNode node) {
     final analysisResult = node.expression.accept(this);
-    if (_latestExpressionType != _kTypeNum) {
+    final expressionType = _latestExpressionType;
+
+    if (expressionType == null) return analysisResult;
+
+    final expressionTypeEnum = AlakonType.from(expressionType);
+
+    final operatorDefined = DefaultOperators.isOperatorDefined(
+        expressionTypeEnum, AlakonOperator.minus);
+
+    if (!operatorDefined) {
       analysisResult.recordError(
-        TypeMismatchError(
-          message: 'Expected $_kTypeNum but got $_latestExpressionType',
-          begin: node.expression.beginToken,
-          end: node.expression.beginToken,
+        OperatorError(
+          message: 'Operator "!" is not defined for type $expressionType.',
+          begin: node.tokenMinus,
+          end: node.tokenMinus,
         ),
       );
     }
-    _latestExpressionType = _kTypeNum;
+
     return analysisResult;
   }
 
   @override
   AnalysisResult visitAndExpression(AndExpressionNode node) {
-    final leftAnalysis = node.left.accept(this);
-    final leftType = _latestExpressionType;
-
-    final rightAnalysis = node.right.accept(this);
-    final rightType = _latestExpressionType;
-
-    final result = AnalysisResult.fromResults([leftAnalysis, rightAnalysis]);
-
-    switch ((leftType, rightType)) {
-      case (_kTypeString, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeString',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeString):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeString',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-      case (_kTypeNum, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeNum',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeNum):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeNum',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-    }
-    _latestExpressionType = leftType;
-    return result;
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.and,
+      expressionType: AlakonType.bool,
+    );
   }
 
   @override
   AnalysisResult visitOrExpression(OrExpressionNode node) {
-    final leftAnalysis = node.left.accept(this);
-    final leftType = _latestExpressionType;
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.or,
+      expressionType: AlakonType.bool,
+    );
+  }
 
-    final rightAnalysis = node.right.accept(this);
-    final rightType = _latestExpressionType;
+  @override
+  AnalysisResult visitEq(EqualComparisonNode node) {
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.eq,
+      expressionType: AlakonType.bool,
+    );
+  }
 
-    final result = AnalysisResult.fromResults([leftAnalysis, rightAnalysis]);
+  @override
+  AnalysisResult visitGEq(GEqComparisonNode node) {
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.geq,
+      expressionType: AlakonType.bool,
+    );
+  }
 
-    switch ((leftType, rightType)) {
-      case (_kTypeString, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeString',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeString):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeString',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-      case (_kTypeNum, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeNum',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeNum):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeBool but got $_kTypeNum',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-    }
-    _latestExpressionType = leftType;
-    return result;
+  @override
+  AnalysisResult visitGT(GTComparisonNode node) {
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.gt,
+      expressionType: AlakonType.bool,
+    );
+  }
+
+  @override
+  AnalysisResult visitLEq(LEqComparisonNode node) {
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.leq,
+      expressionType: AlakonType.bool,
+    );
+  }
+
+  @override
+  AnalysisResult visitLT(LTComparisonNode node) {
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.lt,
+      expressionType: AlakonType.bool,
+    );
+  }
+
+  @override
+  AnalysisResult visitNEq(NEqComparisonNode node) {
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.neq,
+      expressionType: AlakonType.bool,
+    );
   }
 
   @override
   AnalysisResult visitNotExpression(NotExpressionNode node) {
     final analysisResult = node.expression.accept(this);
-    if (_latestExpressionType != _kTypeBool) {
+    final expressionType = _latestExpressionType;
+
+    if (expressionType == null) return analysisResult;
+
+    final expressionTypeEnum = AlakonType.from(expressionType);
+
+    final operatorDefined = DefaultOperators.isOperatorDefined(
+        expressionTypeEnum, AlakonOperator.not);
+
+    if (!operatorDefined) {
       analysisResult.recordError(
-        TypeMismatchError(
-          message: 'Expected $_kTypeBool but got $_latestExpressionType',
-          begin: node.expression.beginToken,
-          end: node.expression.beginToken,
+        OperatorError(
+          message: 'Operator "!" is not defined for type $expressionType.',
+          begin: node.tokenNot,
+          end: node.tokenNot,
         ),
       );
     }
-    _latestExpressionType = _kTypeBool;
+
     return analysisResult;
   }
 
@@ -424,54 +349,11 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
 
   @override
   AnalysisResult visitSubtractionExpression(SubtractionExpressionNode node) {
-    final leftResult = node.left.accept(this);
-    final leftType = _latestExpressionType;
-
-    final rightResult = node.right.accept(this);
-    final rightType = _latestExpressionType;
-
-    final result = AnalysisResult.fromResults(
-      [
-        leftResult,
-        rightResult,
-      ],
+    return _visitOperationExpression(
+      node,
+      AlakonOperator.subtract,
+      takesLeftType: true,
     );
-    switch ((leftType, rightType)) {
-      case (_kTypeString, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeString',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeString):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeString',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-      case (_kTypeBool, _):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeBool',
-            begin: node.left.beginToken,
-            end: node.left.endToken,
-          ),
-        );
-      case (_, _kTypeBool):
-        result.recordError(
-          TypeMismatchError(
-            message: 'Expected $_kTypeNum but got $_kTypeBool',
-            begin: node.right.beginToken,
-            end: node.right.endToken,
-          ),
-        );
-    }
-    _latestExpressionType = leftType;
-    return result;
   }
 
   @override
@@ -607,6 +489,62 @@ class _AnalyzerVisitor implements AstVisitor<AnalysisResult> {
         ),
       );
     }
+    return result;
+  }
+
+  AnalysisResult _visitOperationExpression(
+    OperationExpressionNode node,
+    AlakonOperator operator, {
+    AlakonType? expressionType,
+    bool takesLeftType = false,
+  }) {
+    final leftResult = node.left.accept(this);
+    final leftType = _latestExpressionType;
+
+    final rightResult = node.right.accept(this);
+    final rightType = _latestExpressionType;
+
+    // TODO: add an invalidType type to handle the case where the expression is
+    //      wrong.
+    if (expressionType != null) {
+      _latestExpressionType = expressionType.value;
+    } else if (takesLeftType) {
+      _latestExpressionType = leftType;
+    } else {
+      _latestExpressionType = rightType;
+    }
+    final result = AnalysisResult.fromResults([leftResult, rightResult]);
+    // Left and right should not be null, if so return the result.
+    if (leftType == null || rightType == null) return result;
+
+    final leftTypeEnum = AlakonType.from(leftType);
+    final rightTypeEnum = AlakonType.from(rightType);
+    final operatorDefined =
+        DefaultOperators.isOperatorDefined(leftTypeEnum, operator);
+
+    if (!operatorDefined) {
+      result.recordError(
+        OperatorError(
+          message: 'Operator ${operator.name} is not defined for type $leftType.',
+          begin: node.tokenOperand,
+          end: node.tokenOperand,
+        ),
+      );
+      // Do not check right type validity if operator is incompatible with left.
+      return result;
+    }
+    final rightTypeValid = DefaultOperators.isOperatorValidForTypes(
+        operator, leftTypeEnum, rightTypeEnum);
+    if (!rightTypeValid) {
+      result.recordError(
+        TypeMismatchError(
+          message: 'Unexpected $rightType',
+          begin: node.right.beginToken,
+          end: node.right.endToken,
+        ),
+      );
+    }
+
     return result;
   }
 }

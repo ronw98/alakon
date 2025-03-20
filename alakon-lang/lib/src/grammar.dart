@@ -25,7 +25,19 @@ class AlakonGrammar extends GrammarDefinition {
 
   Parser tokenElse() => ref1(token, 'else');
 
-  Parser tokenEquals() => ref1(token, '=');
+  Parser tokenAssign() => ref1(token, '=');
+
+  Parser tokenEquals() => ref1(token, '==');
+
+  Parser tokenNotEquals() => ref1(token, '!=');
+
+  Parser tokenGt() => ref1(token, '>');
+
+  Parser tokenGEq() => ref1(token, '>=');
+
+  Parser tokenLt() => ref1(token, '<');
+
+  Parser tokenLEq() => ref1(token, '<=');
 
   Parser tokenLeftParen() => ref1(token, '(');
 
@@ -141,14 +153,14 @@ class AlakonGrammar extends GrammarDefinition {
       ref0(type) &
       ref0(identifier) &
       (statementEnd() |
-          (ref0(tokenEquals) &
+          (ref0(tokenAssign) &
               ref0(expression).or(failure('Expression expected'),
                   failureJoiner: selectFarthest) &
               statementEnd()));
 
   Parser variableAssign() =>
       ref0(identifier) &
-      ref0(tokenEquals) &
+      ref0(tokenAssign) &
       ref0(expression).or(failure('Expression expected')) &
       statementEnd();
 
@@ -189,6 +201,7 @@ class AlakonGrammar extends GrammarDefinition {
   Parser expression() {
     final builder = ExpressionBuilder()..primitive(ref0(primitiveExpression));
 
+    // ()
     builder.group().wrapper(
       ref0(tokenLeftParen).trim(),
       ref0(tokenRightParen).trim(),
@@ -201,6 +214,7 @@ class AlakonGrammar extends GrammarDefinition {
       },
     );
 
+    // -
     builder.group().prefix(
       ref0(tokenMinus).trim(),
       (minus, value) {
@@ -208,6 +222,7 @@ class AlakonGrammar extends GrammarDefinition {
       },
     );
 
+    // !
     builder.group().prefix(
       ref0(tokenNot).trim(),
       (not, value) {
@@ -218,6 +233,7 @@ class AlakonGrammar extends GrammarDefinition {
       },
     );
 
+    // * / &&
     builder.group()
       ..left(
         ref0(tokenStar).trim(),
@@ -250,6 +266,7 @@ class AlakonGrammar extends GrammarDefinition {
         },
       );
 
+    // - + ||
     builder.group()
       ..left(
         ref0(tokenMinus).trim(),
@@ -281,6 +298,63 @@ class AlakonGrammar extends GrammarDefinition {
           );
         },
       );
+
+    builder.group()
+      ..left(
+        ref0(tokenEquals),
+        (left, tokenComparator, right) {
+          return EqualComparisonNode(
+            left: left,
+            right: right,
+            tokenComparator: tokenComparator,
+          );
+        },
+      ) ..left(
+      ref0(tokenNotEquals),
+          (left, tokenComparator, right) {
+        return NEqComparisonNode(
+          left: left,
+          right: right,
+          tokenComparator: tokenComparator,
+        );
+      },
+    )..left(
+      ref0(tokenGt),
+          (left, tokenComparator, right) {
+        return GTComparisonNode(
+          left: left,
+          right: right,
+          tokenComparator: tokenComparator,
+        );
+      },
+    )..left(
+      ref0(tokenGEq),
+          (left, tokenComparator, right) {
+        return GEqComparisonNode(
+          left: left,
+          right: right,
+          tokenComparator: tokenComparator,
+        );
+      },
+    )..left(
+      ref0(tokenLt),
+          (left, tokenComparator, right) {
+        return LTComparisonNode(
+          left: left,
+          right: right,
+          tokenComparator: tokenComparator,
+        );
+      },
+    )..left(
+      ref0(tokenLEq),
+          (left, tokenComparator, right) {
+        return LEqComparisonNode(
+          left: left,
+          right: right,
+          tokenComparator: tokenComparator,
+        );
+      },
+    );
     return builder.build();
   }
 }

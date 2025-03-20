@@ -151,4 +151,34 @@ class AstPrinter implements AstVisitor<String> {
   String visitWhile(WhileNode node) {
     return _printNodeWithChildren('While', [node.condition, node.body]);
   }
+
+  @override
+  String visitEq(EqualComparisonNode node) {
+    return _printNodeWithChildren('EqExpression', [node.left, node.right]);
+  }
+
+  @override
+  String visitGEq(GEqComparisonNode node) {
+    return _printNodeWithChildren('GEqExpression', [node.left, node.right]);
+  }
+
+  @override
+  String visitGT(GTComparisonNode node) {
+    return _printNodeWithChildren('GtExpression', [node.left, node.right]);
+  }
+
+  @override
+  String visitLEq(LEqComparisonNode node) {
+    return _printNodeWithChildren('LEqExpression', [node.left, node.right]);
+  }
+
+  @override
+  String visitLT(LTComparisonNode node) {
+    return _printNodeWithChildren('LtExpression', [node.left, node.right]);
+  }
+
+  @override
+  String visitNEq(NEqComparisonNode node) {
+    return _printNodeWithChildren('NEqExpression', [node.left, node.right]);
+  }
 }

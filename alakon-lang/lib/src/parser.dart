@@ -17,7 +17,7 @@ class AlakonParser extends AlakonGrammar {
               VariableDeclarationNode(
                 variableType: type,
                 variableName: name,
-                tokenEquals: tokenEq,
+                tokenAssign: tokenEq,
                 assign: assign,
               ),
             [final type, final name, ...] => VariableDeclarationNode(
@@ -37,7 +37,7 @@ class AlakonParser extends AlakonGrammar {
               VariableAssignNode(
                 variableName: variable,
                 assign: assign,
-                tokenEquals: tokenEq,
+                tokenAssign: tokenEq,
               ),
             _ => throw Error(),
           };

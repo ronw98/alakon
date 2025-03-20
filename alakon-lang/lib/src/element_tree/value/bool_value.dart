@@ -3,6 +3,7 @@ part of 'value.dart';
 class AlakonBoolValue extends AlakonValue {
   AlakonBoolValue(this.value);
 
+  @override
   final bool value;
 
   @override

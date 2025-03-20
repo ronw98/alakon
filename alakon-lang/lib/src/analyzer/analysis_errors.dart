@@ -52,6 +52,14 @@ class TypeMismatchError extends AnalysisError {
   });
 }
 
+class OperatorError extends AnalysisError {
+  OperatorError({
+    required super.begin,
+    required super.end,
+    required super.message,
+  });
+}
+
 class UnknownReferenceError extends AnalysisError {
   UnknownReferenceError({
     required super.message,
