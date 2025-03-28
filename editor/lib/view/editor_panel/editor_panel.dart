@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+
 /// Pane of the app containing the code edition text field.
 class EditorPanel extends StatefulWidget {
   const EditorPanel({super.key});
@@ -38,7 +39,7 @@ class _EditorPanelState extends State<EditorPanel> {
       },
     );
     _fieldFocusNode.addListener(() {
-      if(_fieldFocusNode.hasPrimaryFocus) {
+      if (_fieldFocusNode.hasPrimaryFocus) {
         _controller.setFocused();
       } else {
         _controller.clearFocused();
@@ -120,7 +121,7 @@ class _EditorPanelState extends State<EditorPanel> {
                     }
                   : null,
               icon: icon,
-              label: Text('Run'),
+              label: Text(state is CodeRunStateRunning ? 'Running...' : 'Run'),
             );
           },
         ),

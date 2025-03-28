@@ -5,7 +5,7 @@ sealed class AlakonStatementOrBlock implements AlakonElement {
   ///
   /// The execution is performed within a [VariableScope], which can be read or
   /// updated if the statement contains variable references.
-  void execute(VariableScope variables);
+  FutureOr<void> execute(VariableScope variables);
 }
 
 class AlakonBlock extends AlakonStatementOrBlock with HasVariableScope {
@@ -118,11 +118,13 @@ class AlakonWhile extends AlakonStatement {
   final AlakonStatementOrBlock body;
 
   @override
-  void execute(VariableScope variables) {
-    final conditionValue = condition.resolve(variables);
+  Future<void> execute(VariableScope variables) async {
+    AlakonValue conditionValue = condition.resolve(variables);
     if (conditionValue is AlakonBoolValue) {
       while (conditionValue.value) {
         body.execute(variables);
+        // Re execute condition after body
+        conditionValue = condition.resolve(variables);
       }
     } else {
       throw AlakonRuntimeException(

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:isolate';
+
 import 'package:alakon_lang/src/element_tree/alakon_runtime_exception.dart';
 import 'package:alakon_lang/src/element_tree/alakon_variable.dart';
 import 'package:alakon_lang/src/element_tree/value/value.dart';
