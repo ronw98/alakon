@@ -35,12 +35,49 @@ class AlakonProgram with HasVariableScope implements AlakonElement {
   ///
   /// Specify [stdout] and [stderr] to redirect prints and errors from the
   /// program.
-  void run({
+  Future<void> run({
     StdCallback? stdout,
     StdCallback? stderr,
-  }) {
-    AlakonProgram.stdout = stdout;
-    AlakonProgram.stderr = stderr;
+  }) async {
+    final completer = Completer<void>();
+    final receivePort = ReceivePort();
+    receivePort.listen((message) {
+      if(message == 'DONE') {
+        receivePort.close();
+        completer.complete();
+      } else {
+        final value = message['value'];
+        final isError = message['type'] == 'err';
+        if (isError) {
+          stderr?.call(value);
+        } else {
+          stdout?.call(value);
+        }
+      }
+    });
+    final isolate = await Isolate.spawn(_runProgram, receivePort.sendPort, paused: true);
+    isolate.addOnExitListener(receivePort.sendPort, response: 'DONE');
+    isolate.resume(isolate.pauseCapability!);
+    return completer.future;
+  }
+
+  Future<void> _runProgram(SendPort port) async {
+    AlakonProgram.stdout = (value) {
+      port.send(
+          {
+            'value': value,
+            'type': 'out',
+          },
+        );
+    };
+    AlakonProgram.stderr = (value) {
+      port.send(
+          {
+            'value': value,
+            'type': 'err',
+          },
+        );
+    };
     try {
       for (final statement in statements) {
         statement.execute(scope);

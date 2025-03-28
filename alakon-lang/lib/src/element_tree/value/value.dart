@@ -16,6 +16,7 @@ part 'string_value.dart';
 /// handle.
 sealed class AlakonValue {
   AlakonValue get defaultValue => throw UnimplementedError();
+  dynamic get value;
 
   AlakonValue operator +(AlakonValue other) {
     return defaultValue;
@@ -35,6 +36,30 @@ sealed class AlakonValue {
 
   AlakonValue operator -() {
     return defaultValue;
+  }
+
+  AlakonValue operator <(AlakonValue other) {
+    return defaultValue;
+  }
+
+  AlakonValue operator <=(AlakonValue other) {
+    return defaultValue;
+  }
+
+  AlakonValue operator >=(AlakonValue other) {
+    return defaultValue;
+  }
+
+  AlakonValue operator >(AlakonValue other) {
+    return defaultValue;
+  }
+
+  AlakonValue equals(AlakonValue other) {
+    return AlakonBoolValue(value == other.value);
+  }
+
+  AlakonValue notEquals(AlakonValue other) {
+    return AlakonBoolValue(value != other.value);
   }
 
   AlakonValue and(AlakonValue other) {
@@ -57,4 +82,7 @@ class AlakonEmptyValue extends AlakonValue {
   String toPrintValue() {
     throw UnimplementedError();
   }
+
+  @override
+  get value => throw UnimplementedError();
 }

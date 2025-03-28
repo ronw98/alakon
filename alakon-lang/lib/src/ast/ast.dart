@@ -43,6 +43,13 @@ abstract interface class AstVisitor<R> {
   R visitIf(IfNode node);
 
   R visitWhile(WhileNode node);
+  R visitEq(EqualComparisonNode node);
+  R visitNEq(NEqComparisonNode node);
+  R visitGT(GTComparisonNode node);
+  R visitGEq(GEqComparisonNode node);
+
+  R visitLT(LTComparisonNode node);
+  R visitLEq(LEqComparisonNode node);
 }
 
 abstract class AstNode {
@@ -120,14 +127,14 @@ class VariableDeclarationNode extends StatementNode {
   VariableDeclarationNode({
     required this.variableType,
     required this.variableName,
-    this.tokenEquals,
+    this.tokenAssign,
     this.assign,
   });
 
   final Token<String> variableType;
   final Token<String> variableName;
 
-  final Token<String>? tokenEquals;
+  final Token<String>? tokenAssign;
   final ExpressionNode? assign;
 
   @override
@@ -144,11 +151,11 @@ class VariableAssignNode extends StatementNode {
   VariableAssignNode({
     required this.variableName,
     required this.assign,
-    required this.tokenEquals,
+    required this.tokenAssign,
   });
 
   final Token<String> variableName;
-  final Token<String> tokenEquals;
+  final Token<String> tokenAssign;
   final ExpressionNode assign;
 
   @override

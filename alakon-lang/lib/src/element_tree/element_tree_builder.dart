@@ -136,6 +136,54 @@ class _ElementTreeBuilder implements AstVisitor<AlakonElement> {
   }
 
   @override
+  AlakonElement visitEq(EqualComparisonNode node) {
+    return AlakonEq(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitGEq(GEqComparisonNode node) {
+    return AlakonGEq(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitGT(GTComparisonNode node) {
+    return AlakonGT(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitLEq(LEqComparisonNode node) {
+    return AlakonLEq(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitLT(LTComparisonNode node) {
+    return AlakonLT(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
+  AlakonElement visitNEq(NEqComparisonNode node) {
+    return AlakonNEq(
+      left: node.left.accept(this) as AlakonExpression,
+      right: node.right.accept(this) as AlakonExpression,
+    );
+  }
+
+  @override
   AlakonElement visitVariableAssign(VariableAssignNode node) {
     return AlakonVariableAssign(
       expression: node.assign.accept(this) as AlakonExpression,

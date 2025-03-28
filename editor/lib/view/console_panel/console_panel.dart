@@ -26,47 +26,51 @@ class ConsolePanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BlocBuilder<CodeRunCubit, CodeRunState>(
-              builder: (context, state) {
-                final spans = switch (state) {
-                  CodeRunStateInitial() => <TextSpan>[],
-                  CodeRunStateLaunching() => <TextSpan>[],
-                  CodeRunStateRunning(outputs: final outputs) ||
-                  CodeRunStateDone(outputs: final outputs) =>
-                    outputs.map(
-                      (output) {
-                        if (output is CodeStdout) {
-                          return TextSpan(text: '${output.data}\n');
-                        }
-                        return TextSpan(
-                          text: '${output.data}\n',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        );
-                      },
-                    ).toList(),
-                };
-                return RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'Console\n',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              decoration: TextDecoration.underline,
-                              decorationColor:
-                                  Theme.of(context).colorScheme.onSurface,
-                            ),
-                      ),
-                      ...spans
-                    ],
-                    style: TextStyle(
-                      fontFamily: Fonts.monocraft,
-                      fontSize: 12,
-                    ),
+            Text(
+              'Console',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    decoration: TextDecoration.underline,
+                    decorationColor: Theme.of(context).colorScheme.onSurface,
                   ),
-                );
-              },
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: BlocBuilder<CodeRunCubit, CodeRunState>(
+                  builder: (context, state) {
+                    final spans = switch (state) {
+                      CodeRunStateInitial() => <TextSpan>[],
+                      CodeRunStateLaunching() => <TextSpan>[],
+                      CodeRunStateRunning(outputs: final outputs) ||
+                      CodeRunStateDone(outputs: final outputs) =>
+                        outputs.map(
+                          (output) {
+                            if (output is CodeStdout) {
+                              return TextSpan(text: '${output.data}\n');
+                            }
+                            return TextSpan(
+                              text: '${output.data}\n',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            );
+                          },
+                        ).toList(),
+                    };
+                    return FractionallySizedBox(
+                      widthFactor: 1,
+                      child: RichText(
+                        text: TextSpan(
+                          children: spans,
+                          style: TextStyle(
+                            fontFamily: Fonts.monocraft,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
             Gap(4),
           ],

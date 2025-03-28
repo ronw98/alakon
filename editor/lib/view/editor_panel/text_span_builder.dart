@@ -99,6 +99,36 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
   }
 
   @override
+  TextSpan visitEq(EqualComparisonNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitGEq(GEqComparisonNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitGT(GTComparisonNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitLEq(LEqComparisonNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitLT(LTComparisonNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
+  TextSpan visitNEq(NEqComparisonNode node) {
+    return _writeTwoFactorsOperation(node);
+  }
+
+  @override
   TextSpan visitNumberExpression(NumberExpressionNode node) {
     return _writeList([node.value.toBuilder(theme[LanguageElement.number])]);
   }
@@ -172,7 +202,7 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
     return _writeList(
       [
         node.variableName.toBuilder(theme[LanguageElement.variableRef]),
-        node.tokenEquals.toBuilder(),
+        node.tokenAssign.toBuilder(),
         node.assign.toBuilder(),
       ],
     );
@@ -184,7 +214,7 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
       [
         node.variableType.toBuilder(theme[LanguageElement.builtIn]),
         node.variableName.toBuilder(),
-        node.tokenEquals?.toBuilder(),
+        node.tokenAssign?.toBuilder(),
         node.assign?.toBuilder(),
       ].nonNulls.toList(),
     );
@@ -249,7 +279,26 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
   ///
   /// If both are `null` returns [rawText].
   TextSpan _writeBlanks(Token? start, Token? stop) {
-    return TextSpan(text: rawText.substring(start?.stop ?? 0, stop?.start));
+    final startHasErrors = start == null
+        ? false
+        : (analysisResult?.errors ?? <AnalysisError>[]).where(
+            (error) {
+              return error.containsToken(start);
+            },
+          ).isNotEmpty;
+
+    final endHasErrors = stop == null
+        ? false
+        : (analysisResult?.errors ?? <AnalysisError>[]).where(
+            (error) {
+              return error.containsToken(stop);
+            },
+          ).isNotEmpty;
+
+    return TextSpan(
+      text: rawText.substring(start?.stop ?? 0, stop?.start),
+      style: startHasErrors && endHasErrors ? errorStyle : null,
+    );
   }
 
   /// Writes the list of given elements.
@@ -272,6 +321,7 @@ class TextSpanBuilder implements AstVisitor<TextSpan> {
           _NodeBuilder(node: final node) => node.beginToken,
           _TokenBuilder(token: final token) => token,
         };
+
         spans.add(_writeBlanks(start, stop));
       }
       final TextSpan currentSpan = switch (current) {

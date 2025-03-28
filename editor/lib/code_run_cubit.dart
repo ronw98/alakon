@@ -134,10 +134,10 @@ class CodeRunCubit extends Cubit<CodeRunState> {
   ///
   /// Callbacks are added for stderr and stdout so that the cubit emits the
   /// prints and errors encountered during the execution of the program.
-  void _execute(ProgramNode program) {
+  void _execute(ProgramNode program) async {
     final programElement = _elementTreeBuilder.build(program);
-    // TODO: run in isolate to allow for stupidly long loops or computations.
-    programElement.run(
+    emit(CodeRunStateRunning(outputs: []));
+    await programElement.run(
       stderr: (error) {
         final newOutput = CodeStderr(data: error);
         switch (state) {
